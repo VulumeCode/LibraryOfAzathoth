@@ -2,6 +2,7 @@ module Main exposing (main)
 
 import Browser exposing (Document)
 import Browser.Events
+import Card exposing (..)
 import Dict
 import Html exposing (Html)
 import Html.Attributes as Attributes exposing (selected)
@@ -31,7 +32,20 @@ type alias Player =
     , health : Int
     , sanity : Int
     , wisdom : Int
+    , wisdomUsed : Int
     , summon : Maybe Card
+    }
+
+
+initPlayer : Player
+initPlayer =
+    { hand = []
+    , selected = []
+    , health = 20
+    , sanity = 20
+    , wisdom = 1
+    , wisdomUsed = 0
+    , summon = Just W14
     }
 
 
@@ -41,172 +55,23 @@ type State
     | GameOver
 
 
-type alias Card =
-    { name : String
-    , cost : Int
-    , text : String
-    , art : String
-    }
-
-
-w1 : Card
-w1 =
-    { name = "Inspiration"
-    , cost = 1
-    , text = "bla"
-    , art = "https://upload.wikimedia.org/wikipedia/en/1/11/Wands01.jpg"
-    }
-
-
-w2 : Card
-w2 =
-    { name = "Dominion"
-    , cost = 1
-    , text = "bla"
-    , art = "https://upload.wikimedia.org/wikipedia/en/0/0f/Wands02.jpg"
-    }
-
-
-w3 : Card
-w3 =
-    { name = "Foresight"
-    , cost = 1
-    , text = "bla"
-    , art = "https://upload.wikimedia.org/wikipedia/en/f/ff/Wands03.jpg"
-    }
-
-
-w4 : Card
-w4 =
-    { name = "Perfection"
-    , cost = 1
-    , text = "bla"
-    , art = "https://upload.wikimedia.org/wikipedia/en/a/a4/Wands04.jpg"
-    }
-
-
-w5 : Card
-w5 =
-    { name = "Conflict"
-    , cost = 2
-    , text = "bla"
-    , art = "https://upload.wikimedia.org/wikipedia/en/9/9d/Wands05.jpg"
-    }
-
-
-w6 : Card
-w6 =
-    { name = "Pride"
-    , cost = 2
-    , text = "bla"
-    , art = "https://upload.wikimedia.org/wikipedia/en/3/3b/Wands06.jpg"
-    }
-
-
-w7 : Card
-w7 =
-    { name = "Conviction"
-    , cost = 2
-    , text = "bla"
-    , art = "https://upload.wikimedia.org/wikipedia/en/e/e4/Wands07.jpg"
-    }
-
-
-w8 : Card
-w8 =
-    { name = "Change"
-    , cost = 2
-    , text = "bla"
-    , art = "https://upload.wikimedia.org/wikipedia/en/6/6b/Wands08.jpg"
-    }
-
-
-w9 : Card
-w9 =
-    { name = "Stamina"
-    , cost = 2
-    , text = "bla"
-    , art = "https://upload.wikimedia.org/wikipedia/en/e/e7/Wands09.jpg"
-    }
-
-
-w10 : Card
-w10 =
-    { name = "Oppression"
-    , cost = 3
-    , text = "bla"
-    , art = "https://upload.wikimedia.org/wikipedia/en/0/0b/Wands10.jpg"
-    }
-
-
-w11 : Card
-w11 =
-    { name = "Discovery"
-    , cost = 3
-    , text = "bla"
-    , art = "https://upload.wikimedia.org/wikipedia/en/6/6a/Wands11.jpg"
-    }
-
-
-w12 : Card
-w12 =
-    { name = "Energy"
-    , cost = 3
-    , text = "bla"
-    , art = "https://upload.wikimedia.org/wikipedia/en/1/16/Wands12.jpg"
-    }
-
-
-w13 : Card
-w13 =
-    { name = "Vibrance"
-    , cost = 4
-    , text = "bla"
-    , art = "https://upload.wikimedia.org/wikipedia/en/0/0d/Wands13.jpg"
-    }
-
-
-w14 : Card
-w14 =
-    { name = "Visions"
-    , cost = 4
-    , text = "bla"
-    , art = "https://upload.wikimedia.org/wikipedia/en/c/ce/Wands14.jpg"
-    }
-
-
-allCards : List Card
-allCards =
-    [ w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12, w13, w14 ]
-
-
-cardBack =
-    "public/images/back.jpg"
+handSize : number
+handSize =
+    7
 
 
 init : Value -> ( Model, Cmd Msg )
 init _ =
-    ( { you =
-            { hand = List.take 7 allCards
-            , selected = []
-            , health = 20
-            , sanity = 20
-            , wisdom = 1
-            , summon = Just w14
-            }
-      , they =
-            { hand = List.take 7 allCards
-            , selected = []
-            , health = 20
-            , sanity = 20
-            , wisdom = 1
-            , summon = Nothing
-            }
+    ( { you = initPlayer
+      , they = initPlayer
       , turn = 1
       , state = Playing
       }
       -- , Random.generate Spawn Tetrimino.random
-    , Cmd.none
+    , Cmd.batch
+        [ Random.generate DealYouHand (Random.list handSize Card.random)
+        , Random.generate DealTheyHand (Random.list handSize Card.random)
+        ]
     )
 
 
@@ -230,7 +95,7 @@ viewRoot model =
 
 viewBoard : Model -> Html Msg
 viewBoard model =
-    Html.div [ Attributes.class "h-full w-3/4 max-h-screen relative text-gray-900" ]
+    Html.div [ Attributes.class "h-full w-3/4 max-h-screen relative text-gray-600" ]
         [ Html.div [ Attributes.class "flex p-1 justify-start", Attributes.style "height" "25%" ]
             (List.map
                 (\card ->
@@ -250,7 +115,7 @@ viewBoard model =
                         ]
                    ]
             )
-        , Html.div [ Attributes.class "flex p-1 justify-center", Attributes.style "height" "50%", Attributes.style "font-size" "200%" ]
+        , Html.div [ Attributes.class "flex p-1 justify-center text-gray-900", Attributes.style "height" "50%", Attributes.style "font-size" "200%" ]
             (List.map
                 (\mcard ->
                     case mcard of
@@ -273,10 +138,10 @@ viewBoard model =
                                     ]
                                 ]
                 )
-                [ model.they.summon, model.you.summon ]
+                [ Maybe.map cardDetails model.they.summon, Maybe.map cardDetails model.you.summon ]
             )
-        , Html.div [ Attributes.class "flex p-1 justify-end", Attributes.style "height" "25%" ]
-            (Html.div [ Attributes.class "flex-grow playerStats ", Attributes.style "font-size" "200%" ]
+        , Html.div [ Attributes.class "flex p-1 justify-end text-gray-900", Attributes.style "height" "25%" ]
+            (Html.div [ Attributes.class "flex-grow playerStats text-gray-600 ", Attributes.style "font-size" "200%" ]
                 [ Html.div [] [ Html.text <| "❤️ Health " ++ String.fromInt model.you.health ++ "/20" ]
                 , Html.div [] [ Html.text <| "🧠 Sanity " ++ String.fromInt model.you.sanity ++ "/20" ]
                 , Html.div [] [ Html.text <| "📖 Wisdom " ++ String.fromInt model.you.wisdom ++ "/" ++ String.fromInt model.turn ]
@@ -284,11 +149,15 @@ viewBoard model =
                 ]
                 :: List.map
                     (\card ->
+                        let
+                            details =
+                                Card.cardDetails card
+                        in
                         Html.div
-                            [ Attributes.class "imageContainer border-small hover:border-yellow-600"
+                            [ Attributes.class "imageContainer border-small"
                             , Attributes.class
                                 (if List.member card model.you.selected then
-                                    "border-blue-600"
+                                    "border-blue-300"
 
                                  else
                                     "border-transparent"
@@ -296,10 +165,10 @@ viewBoard model =
                             , Events.on "pointerup" (Decode.succeed <| SelectCard card)
                             ]
                             [ Html.div []
-                                [ Html.img [ Attributes.src card.art ] []
-                                , Html.span [ Attributes.class "name" ] [ Html.text card.name ]
-                                , Html.span [ Attributes.class "text" ] [ Html.text card.text ]
-                                , Html.span [ Attributes.class "cost" ] [ Html.text <| String.fromInt card.cost ]
+                                [ Html.img [ Attributes.src details.art ] []
+                                , Html.span [ Attributes.class "name" ] [ Html.text details.name ]
+                                , Html.span [ Attributes.class "text" ] [ Html.text details.text ]
+                                , Html.span [ Attributes.class "cost" ] [ Html.text <| String.fromInt details.cost ]
                                 ]
                             ]
                     )
@@ -317,18 +186,34 @@ type Msg
     | Restart
     | SelectCard Card
     | SubmitScheme
+    | DealYouHand (List Card)
+    | DealTheyHand (List Card)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg ({ you } as model) =
+update msg ({ you, they } as model) =
     case msg of
         SelectCard card ->
             ( { model | you = selectCard you card }
             , Cmd.none
             )
 
+        DealYouHand cards ->
+            ( { model | you = dealHand you cards }
+            , Cmd.none
+            )
+
+        DealTheyHand cards ->
+            ( { model | they = dealHand they cards }
+            , Cmd.none
+            )
+
         _ ->
             ( model, Cmd.none )
+
+
+dealHand ({ hand } as player) cards =
+    { player | hand = cards }
 
 
 selectCard : Player -> Card -> Player
