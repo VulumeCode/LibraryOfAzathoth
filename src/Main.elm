@@ -28,7 +28,7 @@ type alias Model =
 
 type alias Player =
     { hand : List Card
-    , selected : List Card
+    , selected : List Int
     , health : Int
     , sanity : Int
     , wisdom : Int
@@ -147,8 +147,8 @@ viewBoard model =
                 , Html.div [] [ Html.text <| "📖 Wisdom " ++ String.fromInt model.you.wisdom ++ "/" ++ String.fromInt model.turn ]
                 , Html.div [ Attributes.class "text-blue-600 hover:text-blue-300", Events.on "pointerup" (Decode.succeed <| SubmitScheme) ] [ Html.text <| "✨ Enact scheme" ]
                 ]
-                :: List.map
-                    (\card ->
+                :: List.indexedMap
+                    (\i card ->
                         let
                             details =
                                 Card.cardDetails card
@@ -156,13 +156,13 @@ viewBoard model =
                         Html.div
                             [ Attributes.class "imageContainer border-small"
                             , Attributes.class
-                                (if List.member card model.you.selected then
+                                (if List.member i model.you.selected then
                                     "border-blue-300"
 
                                  else
                                     "border-transparent"
                                 )
-                            , Events.on "pointerup" (Decode.succeed <| SelectCard card)
+                            , Events.on "pointerup" (Decode.succeed <| SelectCard i)
                             ]
                             [ Html.div []
                                 [ Html.img [ Attributes.src details.art ] []
@@ -184,7 +184,7 @@ viewBoard model =
 type Msg
     = Place
     | Restart
-    | SelectCard Card
+    | SelectCard Int
     | SubmitScheme
     | DealYouHand (List Card)
     | DealTheyHand (List Card)
@@ -216,7 +216,7 @@ dealHand ({ hand } as player) cards =
     { player | hand = cards }
 
 
-selectCard : Player -> Card -> Player
+selectCard : Player -> Int -> Player
 selectCard ({ selected } as you) card =
     { you
         | selected =
