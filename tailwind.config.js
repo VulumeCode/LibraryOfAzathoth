@@ -4,7 +4,8 @@ module.exports = {
       "small": "0.25rem",
     },
     fontFamily: {
-      'display': ['Insula, Tahoma, Comic Sans MS'],
+      'display': ['Walzhari, Comic Sans MS'],
+      'sans': ['Tahoma, Comic Sans MS'],
     },
     container: {
       center: true

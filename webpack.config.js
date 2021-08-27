@@ -15,6 +15,18 @@ module.exports = (env, { mode }) => ({
         test: /\.elm$/,
         exclude: [/elm-stuff/, /node_modules/],
         use: elmWebpackLoader(mode)
+      },
+      {
+        test: /\.(woff(2)?|otf|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              name: '[name].[ext]',
+              outputPath: 'fonts/'
+            }
+          }
+        ]
       }
     ]
   },

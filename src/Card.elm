@@ -104,14 +104,14 @@ cardDetails card =
         W11 ->
             { name = "Discovery"
             , cost = 3
-            , text = "bla"
+            , text = "When Aswan Jaguar comes into play, choose a random creature type from those in target opponent’s deck."
             , art = "https://upload.wikimedia.org/wikipedia/en/6/6a/Wands11.jpg"
             }
 
         W12 ->
             { name = "Energy"
             , cost = 3
-            , text = "bla"
+            , text = "Dominion Lich Ritual Suicide"
             , art = "https://upload.wikimedia.org/wikipedia/en/1/16/Wands12.jpg"
             }
 
