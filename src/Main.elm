@@ -120,14 +120,14 @@ viewBoard model =
                 (\mcard ->
                     case mcard of
                         Nothing ->
-                            Html.div [ Attributes.class "imageContainer border-small border-transparent hover:border-yellow-600" ]
+                            Html.div [ Attributes.class "imageContainer border-small border-transparent" ]
                                 [ Html.div []
                                     [ Html.img [ Attributes.src cardBack ] []
                                     ]
                                 ]
 
                         Just card ->
-                            Html.div [ Attributes.class "imageContainer border-small border-transparent hover:border-yellow-600" ]
+                            Html.div [ Attributes.class "imageContainer border-small border-transparent" ]
                                 [ Html.div []
                                     [ Html.img [ Attributes.src card.art ] []
                                     , Html.span [ Attributes.class "text" ]
@@ -157,7 +157,7 @@ viewBoard model =
                             [ Attributes.class "imageContainer border-small"
                             , Attributes.class
                                 (if List.member i model.you.selected then
-                                    "border-blue-300"
+                                    "border-yellow-300 border-opacity-75"
 
                                  else
                                     "border-transparent"
@@ -188,6 +188,8 @@ type Msg
     | SubmitScheme
     | DealYouHand (List Card)
     | DealTheyHand (List Card)
+    | DealYouCard Card
+    | DealTheyCard Card
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -208,12 +210,40 @@ update msg ({ you, they } as model) =
             , Cmd.none
             )
 
+        SubmitScheme ->
+            ( { model | you = playCards you }
+            , Random.generate DealYouCard Card.random
+            )
+
+        DealYouCard c ->
+            ( { model | you = dealCard you c }
+            , Cmd.none
+            )
+
         _ ->
             ( model, Cmd.none )
 
 
-dealHand ({ hand } as player) cards =
+playCards : Player -> Player
+playCards ({ hand, selected } as player) =
+    { player
+        | selected = []
+        , hand = List.map Tuple.first <| List.filter (\( _, i ) -> not <| List.member i selected) <| List.indexedMap (\i c -> ( c, i )) <| hand
+    }
+
+
+id x =
+    x
+
+
+dealHand : { a | hand : b } -> b -> { a | hand : b }
+dealHand player cards =
     { player | hand = cards }
+
+
+dealCard : { a | hand : List b } -> b -> { a | hand : List b }
+dealCard ({ hand } as player) card =
+    { player | hand = hand ++ [ card ] }
 
 
 selectCard : Player -> Int -> Player

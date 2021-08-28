@@ -8,6 +8,10 @@
   src: local('CAT Walzhari Regular'), url('./fonts/Catwalzhari.woff') format('woff');
 }
 
+
+@import url('https://fonts.googleapis.com/css2?family=Abel&family=Jost:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Kavivanar&family=Kurale&display=swap');
+
+
 html {
   touch-action: manipulation;
 }
@@ -39,14 +43,15 @@ button:focus {
 @tailwind utilities;
 
 .imageContainer {
-
   height: 100%;
   /* margin-left: calc(-3rem + 3vw); */
   /* transform: rotate(-3deg); */
+  transform: rotate(-3deg);
+
 }
 .imageContainer:hover {
   z-index: 999;
-  transform: translateY(-40px) scale(1.2);
+  transform: scale(1.5) translateY(-40px);
 }
 
 .imageContainer img {
@@ -80,9 +85,12 @@ font-size: 14pt;
   background: linear-gradient(0deg, rgba(217, 119, 6,1) 50%, rgba(217, 119, 6,0) 100%);  */
 }
 .imageContainer span.text  {
-  font-family: 'Balgruf', 'Tahoma';
-  font-size: small;
+  font-family: 'Kurale', 'Jost', 'Comic Sans MS', 'Calibri';
+  font-weight: 600;
+  font-size: 10px;
   line-height: 0.9em;
+
+
   text-align: left;
   /* color: #000; */
   position: absolute;
