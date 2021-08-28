@@ -106,14 +106,14 @@ viewBoard model =
                         ]
                 )
                 model.they.hand
-                ++ [ Html.div [ Attributes.class "flex-grow text-right", Attributes.style "font-size" "200%" ]
+                ++ [ Html.div [ Attributes.class "flex-grow playerStats text-right", Attributes.style "font-size" "200%" ]
                         [ Html.div [] [ Html.text <| String.fromInt model.you.health ++ "/20 Health ❤️" ]
                         , Html.div [] [ Html.text <| String.fromInt model.you.sanity ++ "/20 Sanity 🧠" ]
                         , Html.div [] [ Html.text <| String.fromInt model.you.wisdom ++ "/" ++ String.fromInt model.turn ++ " Wisdom 📖" ]
                         ]
                    ]
             )
-        , Html.div [ Attributes.class "flex p-1 justify-center text-gray-900", Attributes.style "height" "50%", Attributes.style "font-size" "200%" ]
+        , Html.div [ Attributes.class "flex p-1 justify-center text-gray-900", Attributes.style "height" "50%"]
             (List.map
                 (\mcard ->
                     case mcard of
@@ -128,10 +128,10 @@ viewBoard model =
                             Html.div [ Attributes.class "imageContainer border-small border-transparent" ]
                                 [ Html.div []
                                     [ Html.img [ Attributes.src card.art ] []
-                                    , Html.span [ Attributes.class "text" ]
-                                        [ Html.button [] [ Html.text "+1: Blabli" ]
-                                        , Html.button [] [ Html.text "0: BingBong" ]
-                                        , Html.button [] [ Html.text "-5: Baboom" ]
+                                    , Html.span [ Attributes.class "text ", Attributes.style "font-size" "200%"  ]
+                                        [ Html.button [Attributes.class "block"] [ Html.text "+1: Stab" ]
+                                        , Html.button [Attributes.class "block"] [ Html.text "0: Learn" ]
+                                        , Html.button [Attributes.class "block"] [ Html.text "-5: Kill" ]
                                         ]
                                     ]
                                 ]
@@ -142,7 +142,7 @@ viewBoard model =
             (Html.div [ Attributes.class "flex-grow playerStats text-gray-600 ", Attributes.style "font-size" "200%" ]
                 [ Html.div [] [ Html.text <| "❤️ Health " ++ String.fromInt model.you.health ++ "/20" ]
                 , Html.div [] [ Html.text <| "🧠 Sanity " ++ String.fromInt model.you.sanity ++ "/20" ]
-                , Html.div [] [ Html.text <| "📖 Wisdom " ++ String.fromInt model.you.wisdom ++ "/" ++ String.fromInt model.turn ]
+                , Html.div [] [ Html.text <| "📖 Wisdom " ++ String.fromInt model.you.wisdomUsed ++ "/" ++ String.fromInt model.you.wisdom]
                 , Html.div [ Attributes.class "text-blue-600 hover:text-blue-300", Events.on "pointerup" (Decode.succeed <| SubmitScheme) ] [ Html.text <| "✨ Enact scheme" ]
                 ]
                 :: List.indexedMap
@@ -223,9 +223,11 @@ update msg ({ you, they } as model) =
 
 
 playCards : Player -> Player
-playCards ({ hand } as player) =
+playCards ({ hand , wisdom} as player) =
     { player
         | hand = List.filter (\held -> not held.selected) <| hand
+        , wisdom = wisdom + 1
+        , wisdomUsed = 0 
     }
 
 
@@ -255,6 +257,13 @@ selectCard ({ hand } as player) j =
                         c
                 )
                 hand
+    }
+    |> updateCosts
+
+updateCosts : Player -> Player
+updateCosts ({ hand } as player) =
+    { player 
+        | wisdomUsed = List.sum <| List.map (\h -> (cardDetails h.card).cost) <| List.filter .selected hand
     }
 
 

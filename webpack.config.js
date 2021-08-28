@@ -3,6 +3,12 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = (env, { mode }) => ({
+  resolve: {
+    modules: [
+      "public/images",
+      "node_modules"
+    ],
+  },
   output: { filename: "[name].[hash].js" },
   module: {
     rules: [
@@ -15,6 +21,10 @@ module.exports = (env, { mode }) => ({
         test: /\.elm$/,
         exclude: [/elm-stuff/, /node_modules/],
         use: elmWebpackLoader(mode)
+      },
+      {
+        test: /\.(png|jpg)$/,
+        loader: 'url-loader'
       },
       {
         test: /\.(woff(2)?|otf|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
