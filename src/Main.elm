@@ -113,7 +113,7 @@ viewBoard model =
                         ]
                    ]
             )
-        , Html.div [ Attributes.class "flex p-1 justify-center text-gray-900", Attributes.style "height" "50%"]
+        , Html.div [ Attributes.class "flex p-1 justify-center text-gray-900", Attributes.style "height" "50%" ]
             (List.map
                 (\mcard ->
                     case mcard of
@@ -128,10 +128,10 @@ viewBoard model =
                             Html.div [ Attributes.class "imageContainer border-small border-transparent" ]
                                 [ Html.div []
                                     [ Html.img [ Attributes.src card.art ] []
-                                    , Html.span [ Attributes.class "text ", Attributes.style "font-size" "200%"  ]
-                                        [ Html.button [Attributes.class "block"] [ Html.text "+1: Stab" ]
-                                        , Html.button [Attributes.class "block"] [ Html.text "0: Learn" ]
-                                        , Html.button [Attributes.class "block"] [ Html.text "-5: Kill" ]
+                                    , Html.span [ Attributes.class "text ", Attributes.style "font-size" "200%" ]
+                                        [ Html.button [ Attributes.class "block" ] [ Html.text "+1: Stab" ]
+                                        , Html.button [ Attributes.class "block" ] [ Html.text "0: Learn" ]
+                                        , Html.button [ Attributes.class "block" ] [ Html.text "-5: Kill" ]
                                         ]
                                     ]
                                 ]
@@ -142,8 +142,15 @@ viewBoard model =
             (Html.div [ Attributes.class "flex-grow playerStats text-gray-600 ", Attributes.style "font-size" "200%" ]
                 [ Html.div [] [ Html.text <| "❤️ Health " ++ String.fromInt model.you.health ++ "/20" ]
                 , Html.div [] [ Html.text <| "🧠 Sanity " ++ String.fromInt model.you.sanity ++ "/20" ]
-                , Html.div [] [ Html.text <| "📖 Wisdom " ++ String.fromInt model.you.wisdomUsed ++ "/" ++ String.fromInt model.you.wisdom]
-                , Html.div [ Attributes.class "text-blue-600 hover:text-blue-300", Events.on "pointerup" (Decode.succeed <| SubmitScheme) ] [ Html.text <| "✨ Enact scheme" ]
+                , Html.div [] [ Html.text <| "📖 Wisdom " ++ String.fromInt model.you.wisdomUsed ++ "/" ++ String.fromInt model.you.wisdom ]
+                , Html.div
+                    (if schemeValid model.you then
+                        [ Attributes.class "text-blue-600 hover:text-blue-300", Events.on "pointerup" (Decode.succeed <| SubmitScheme) ]
+
+                     else
+                        [ Attributes.class "text-red-600" ]
+                    )
+                    [ Html.text <| "✨ Enact scheme" ]
                 ]
                 :: List.indexedMap
                     (\i { card, selected } ->
@@ -223,11 +230,11 @@ update msg ({ you, they } as model) =
 
 
 playCards : Player -> Player
-playCards ({ hand , wisdom} as player) =
+playCards ({ hand, wisdom } as player) =
     { player
         | hand = List.filter (\held -> not held.selected) <| hand
         , wisdom = wisdom + 1
-        , wisdomUsed = 0 
+        , wisdomUsed = 0
     }
 
 
@@ -258,13 +265,19 @@ selectCard ({ hand } as player) j =
                 )
                 hand
     }
-    |> updateCosts
+        |> updateCosts
+
 
 updateCosts : Player -> Player
 updateCosts ({ hand } as player) =
-    { player 
+    { player
         | wisdomUsed = List.sum <| List.map (\h -> (cardDetails h.card).cost) <| List.filter .selected hand
     }
+
+
+schemeValid : Player -> Bool
+schemeValid player =
+    player.wisdomUsed <= player.wisdom
 
 
 subscriptions : Model -> Sub Msg
