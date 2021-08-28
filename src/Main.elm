@@ -27,8 +27,7 @@ type alias Model =
 
 
 type alias Player =
-    { hand : List Card
-    , selected : List Int
+    { hand : List { card : Card, selected : Bool }
     , health : Int
     , sanity : Int
     , wisdom : Int
@@ -40,7 +39,6 @@ type alias Player =
 initPlayer : Player
 initPlayer =
     { hand = []
-    , selected = []
     , health = 20
     , sanity = 20
     , wisdom = 1
@@ -148,7 +146,7 @@ viewBoard model =
                 , Html.div [ Attributes.class "text-blue-600 hover:text-blue-300", Events.on "pointerup" (Decode.succeed <| SubmitScheme) ] [ Html.text <| "✨ Enact scheme" ]
                 ]
                 :: List.indexedMap
-                    (\i card ->
+                    (\i { card, selected } ->
                         let
                             details =
                                 Card.cardDetails card
@@ -156,7 +154,7 @@ viewBoard model =
                         Html.div
                             [ Attributes.class "imageContainer border-small"
                             , Attributes.class
-                                (if List.member i model.you.selected then
+                                (if selected then
                                     "border-yellow-300 border-opacity-75"
 
                                  else
@@ -225,10 +223,9 @@ update msg ({ you, they } as model) =
 
 
 playCards : Player -> Player
-playCards ({ hand, selected } as player) =
+playCards ({ hand } as player) =
     { player
-        | selected = []
-        , hand = List.map Tuple.first <| List.filter (\( _, i ) -> not <| List.member i selected) <| List.indexedMap (\i c -> ( c, i )) <| hand
+        | hand = List.filter (\held -> not held.selected) <| hand
     }
 
 
@@ -236,25 +233,28 @@ id x =
     x
 
 
-dealHand : { a | hand : b } -> b -> { a | hand : b }
+dealHand : { a | hand : List { card : b, selected : Bool } } -> List b -> { a | hand : List { card : b, selected : Bool } }
 dealHand player cards =
-    { player | hand = cards }
+    { player | hand = List.map (\c -> { card = c, selected = False }) <| cards }
 
 
-dealCard : { a | hand : List b } -> b -> { a | hand : List b }
-dealCard ({ hand } as player) card =
-    { player | hand = hand ++ [ card ] }
+dealCard ({ hand } as player) c =
+    { player | hand = hand ++ [ { card = c, selected = False } ] }
 
 
 selectCard : Player -> Int -> Player
-selectCard ({ selected } as you) card =
-    { you
-        | selected =
-            if List.member card selected then
-                List.filter (\c -> c /= card) selected
+selectCard ({ hand } as player) j =
+    { player
+        | hand =
+            List.indexedMap
+                (\i c ->
+                    if j == i then
+                        { c | selected = not c.selected }
 
-            else
-                card :: selected
+                    else
+                        c
+                )
+                hand
     }
 
 
