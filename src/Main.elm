@@ -1,4 +1,4 @@
-module Main exposing (main)
+module Main exposing (..)
 
 import Browser exposing (Document)
 import Browser.Events
@@ -8,6 +8,7 @@ import Html exposing (Html)
 import Html.Attributes as Attributes exposing (selected)
 import Html.Events as Events
 import Json.Decode as Decode exposing (Value)
+import List.Extra exposing (..)
 import Process
 import Random
 import Set
@@ -107,9 +108,9 @@ viewBoard model =
                 )
                 model.they.hand
                 ++ [ Html.div [ Attributes.class "flex-grow playerStats text-right", Attributes.style "font-size" "200%" ]
-                        [ Html.div [] [ Html.text <| String.fromInt model.you.health ++ "/20 Health ❤️" ]
-                        , Html.div [] [ Html.text <| String.fromInt model.you.sanity ++ "/20 Sanity 🧠" ]
-                        , Html.div [] [ Html.text <| String.fromInt model.you.wisdom ++ "/" ++ String.fromInt model.turn ++ " Wisdom 📖" ]
+                        [ Html.div [] [ Html.text <| String.fromInt model.they.health ++ "/20 Health ❤️" ]
+                        , Html.div [] [ Html.text <| String.fromInt model.they.sanity ++ "/20 Sanity 🧠" ]
+                        , Html.div [] [ Html.text <| String.fromInt model.they.wisdomUsed ++ "/" ++ String.fromInt model.they.wisdom ++ " Wisdom 📖" ]
                         ]
                    ]
             )
@@ -187,8 +188,7 @@ viewBoard model =
 
 
 type Msg
-    = Place
-    | Restart
+    = Restart
     | SelectCard Int
     | SubmitScheme
     | DealYouHand (List Card)
@@ -216,8 +216,8 @@ update msg ({ you, they } as model) =
             )
 
         SubmitScheme ->
-            ( { model | you = playCards you }
-            , Random.generate DealYouCard Card.random
+            ( model |> randomAI |> submitScheme
+            , Cmd.batch [ Random.generate DealYouCard Card.random, Random.generate DealTheyCard Card.random ]
             )
 
         DealYouCard c ->
@@ -225,17 +225,102 @@ update msg ({ you, they } as model) =
             , Cmd.none
             )
 
+        DealTheyCard c ->
+            ( { model | they = dealCard they c }
+            , Cmd.none
+            )
+
         _ ->
             ( model, Cmd.none )
 
 
+possibleHands : List { a | selected : Bool } -> List (List { a | selected : Bool })
+possibleHands list =
+    case list of
+        [] ->
+            [ [] ]
+
+        head :: rest ->
+            List.concatMap
+                (\r -> [ { head | selected = True } :: r, { head | selected = False } :: r ])
+                (possibleHands rest)
+
+
+randomAI : Model -> Model
+randomAI ({ they } as model) =
+    { model
+        | they =
+            Maybe.withDefault they <|
+                List.head <|
+                    List.filter schemeValid <|
+                        List.map (\option -> updateCosts { they | hand = option }) <|
+                            possibleHands they.hand
+    }
+
+
+submitScheme : Model -> Model
+submitScheme ({ you, they } as model) =
+    let
+        getScheme hand =
+            List.map (\c -> cardDetails c.card) <| List.filter (\held -> held.selected) <| hand
+
+        yourScheme =
+            getScheme you.hand
+
+        theirScheme =
+            getScheme they.hand
+
+        getEffect from to scheme =
+            List.foldl
+                (\step total ->
+                    case step of
+                        Damage f ->
+                            { total | damage = total.damage + f from to }
+
+                        _ ->
+                            total
+                )
+                { damage = 0 }
+            <|
+                List.concatMap .effect scheme
+
+        yourEffect =
+            getEffect you they yourScheme
+
+        theirEffect =
+            getEffect they you theirScheme
+    in
+    { model
+        | you = { you | health = you.health - theirEffect.damage } |> playCards
+        , they = { they | health = they.health - yourEffect.damage } |> playCards
+    }
+
+
+
+-- { model | you = playCards you }
+
+
 playCards : Player -> Player
-playCards ({ hand, wisdom } as player) =
+playCards ({ hand, wisdom, wisdomUsed, sanity } as player) =
     { player
         | hand = List.filter (\held -> not held.selected) <| hand
         , wisdom = wisdom + 1
         , wisdomUsed = 0
+        , sanity = sanity - wisdomUsed
     }
+        |> drainSanityFromHealth
+
+
+drainSanityFromHealth : { a | sanity : number, health : number } -> { a | sanity : number, health : number }
+drainSanityFromHealth player =
+    if player.sanity >= 0 then
+        player
+
+    else
+        { player
+            | sanity = 0
+            , health = player.health + player.sanity
+        }
 
 
 id x =

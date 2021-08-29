@@ -44,6 +44,7 @@ button:focus {
 @tailwind utilities;
 
 .imageContainer {
+  
   height: 100%;
   /* margin-left: calc(-3rem + 3vw); */
   /* transform: rotate(-3deg); */
@@ -56,21 +57,27 @@ button:focus {
 }
 
 .imageContainer img {
-
-
   box-shadow: 2px 2px 5px #00000080;
 
   display: block;
   max-width: none;
   height: 100%;
 }
+.imageContainer img.insane   {
+  transform: rotate(-180deg);
+}
+
+
+
+
+
 .imageContainer div {
   position: relative;
   display: inline-block;
   height: 100%;
 }
 .imageContainer span.name  {
-font-size: 14pt;
+  font-size: 14pt;
 
   text-align: center;
   /* color: #000; */
