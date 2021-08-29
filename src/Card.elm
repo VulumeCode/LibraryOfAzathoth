@@ -336,7 +336,12 @@ cardDetails card =
             }
 
         _ ->
-            Debug.todo "remove"
+            { name = "debug"
+            , cost = 4
+            , text = "Do stuff."
+            , art = "https://upload.wikimedia.org/wikipedia/en/3/33/Swords14.jpg"
+            , effect = [Damage (\_ _ -> 10)]
+            }
 
 
 allCards : List Card
@@ -350,4 +355,4 @@ random =
 
 
 cardBack =
-    "public/images/back.jpg"
+    "images/back.jpg"
