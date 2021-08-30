@@ -102,6 +102,7 @@ type alias Player =
     , wisdom : Int
     , wisdomUsed : Int
     , summon : Maybe Card
+    , dead : Bool
     }
 
 type Effect = 

@@ -34,6 +34,7 @@ type alias Player =
     , wisdom : Int
     , wisdomUsed : Int
     , summon : Maybe Card
+    , dead : Bool
     }
 
 
@@ -45,6 +46,7 @@ initPlayer =
     , wisdom = 1
     , wisdomUsed = 0
     , summon = Just W14
+    , dead = False
     }
 
 
@@ -94,12 +96,12 @@ viewRoot model =
 
 viewBoard : Model -> Html Msg
 viewBoard model =
-    Html.div [ Attributes.class "h-full w-3/4 max-h-screen relative text-gray-600" ]
+    Html.div [ Attributes.class "h-full w-3/4 max-h-screen relative " ]
         [ Html.div [ Attributes.class "flex p-1 justify-start", Attributes.style "height" "25%" ]
             (List.map
                 (viewTheirCard (model.state == Settling))
                 model.they.hand
-                ++ [ Html.div [ Attributes.class "flex-grow playerStats text-right", Attributes.style "font-size" "200%" ]
+                ++ [ Html.div [ Attributes.class "flex-grow playerStats text-right text-gray-600", Attributes.style "font-size" "200%" ]
                         [ Html.div [] [ Html.text <| String.fromInt model.they.health ++ "/20 Health ❤️" ]
                         , Html.div [] [ Html.text <| String.fromInt model.they.sanity ++ "/20 Sanity 🧠" ]
                         , Html.div [] [ Html.text <| String.fromInt model.they.wisdomUsed ++ "/" ++ String.fromInt model.they.wisdom ++ " Wisdom 📖" ]
@@ -212,6 +214,7 @@ type Msg
     = Restart
     | SelectCard Int
     | SubmitScheme
+    | SettleSchemes
     | DealYouHand (List Card)
     | DealTheyHand (List Card)
     | DealYouCard Card
@@ -237,8 +240,17 @@ update msg ({ you, they } as model) =
             )
 
         SubmitScheme ->
-            ( model |> randomAI |> submitScheme
-            , Cmd.batch [ Random.generate DealYouCard Card.random, Random.generate DealTheyCard Card.random ]
+            ( { model | state = Settling } |> randomAI
+            , Process.sleep 2000
+                |> Task.perform (\_ -> SettleSchemes)
+            )
+
+        SettleSchemes ->
+            ( model |> settleSchemes
+            , Cmd.batch
+                [ Random.generate DealYouCard Card.random
+                , Random.generate DealTheyCard Card.random
+                ]
             )
 
         DealYouCard c ->
@@ -279,8 +291,8 @@ randomAI ({ they } as model) =
     }
 
 
-submitScheme : Model -> Model
-submitScheme ({ you, they } as model) =
+settleSchemes : Model -> Model
+settleSchemes ({ you, they } as model) =
     let
         getScheme hand =
             List.map (\c -> cardDetails c.card) <| List.filter (\held -> held.selected) <| hand
@@ -314,6 +326,7 @@ submitScheme ({ you, they } as model) =
     { model
         | you = { you | health = you.health - theirEffect.damage } |> playCards
         , they = { they | health = they.health - yourEffect.damage } |> playCards
+        , state = Settling
     }
 
 
