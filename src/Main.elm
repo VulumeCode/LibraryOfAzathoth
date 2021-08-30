@@ -133,8 +133,8 @@ viewBoard model =
                 )
                 [ Maybe.map cardDetails model.they.summon, Maybe.map cardDetails model.you.summon ]
             )
-        , Html.div [ Attributes.class "you flex p-1 justify-end text-gray-900", Attributes.style "height" "25%" ]
-            (Html.div [ Attributes.class "flex-grow playerStats text-gray-600 ", Attributes.style "font-size" "200%" ]
+        , Html.div [ Attributes.class "you flex p-1  text-gray-900", Attributes.style "height" "25%" ]
+            [ Html.div [ Attributes.class "flex-none playerStats text-gray-600 mr-8 ", Attributes.style "font-size" "200%" ]
                 [ Html.div [] [ Html.text <| "❤️ Health " ++ String.fromInt model.you.health ++ "/20" ]
                 , Html.div [] [ Html.text <| "🧠 Sanity " ++ String.fromInt model.you.sanity ++ "/20" ]
                 , Html.div [] [ Html.text <| "📖 Wisdom " ++ String.fromInt model.you.wisdomUsed ++ "/" ++ String.fromInt model.you.wisdom ]
@@ -147,24 +147,24 @@ viewBoard model =
                     )
                     [ Html.text <| "✨ Play scheme" ]
                 ]
-                :: List.indexedMap
+            , Html.div [ Attributes.class "flex-grow hand " ] <|
+                List.indexedMap
                     (\i { card, selected } ->
                         let
                             details =
                                 Card.cardDetails card
                         in
                         Html.div
-                            [ Attributes.class "imageContainer border-small"
-                            , Attributes.class
+                            [ Attributes.class "imageContainer"
+                            , Events.on "pointerup" (Decode.succeed <| SelectCard i)
+                            ]
+                            [ Html.div [Attributes.class
                                 (if selected then
                                     "border-yellow-300 border-opacity-75"
 
                                  else
                                     "border-transparent"
-                                )
-                            , Events.on "pointerup" (Decode.succeed <| SelectCard i)
-                            ]
-                            [ Html.div []
+                                )]
                                 [ Html.img [ Attributes.src details.art ] []
                                 , Html.span [ Attributes.class "name" ] [ Html.text details.name ]
                                 , Html.span [ Attributes.class "text" ] [ Html.text details.text ]
@@ -173,7 +173,7 @@ viewBoard model =
                             ]
                     )
                     model.you.hand
-            )
+            ]
         ]
 
 
