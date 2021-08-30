@@ -51,7 +51,7 @@ button:focus {
   transform: rotate(-3deg);
 
 }
-.imageContainer:hover {
+.you .imageContainer:hover {
   z-index: 999;
   transform: scale(1.5) translateY(-40px);
 }

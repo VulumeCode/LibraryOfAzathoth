@@ -1,7 +1,7 @@
 module.exports = {
   theme: {
     borderWidth: {
-      "small": "0.25rem",
+      "small": "0.5rem",
     },
     fontFamily: {
       'display': ['Walzhari, Comic Sans MS'],

@@ -97,15 +97,7 @@ viewBoard model =
     Html.div [ Attributes.class "h-full w-3/4 max-h-screen relative text-gray-600" ]
         [ Html.div [ Attributes.class "flex p-1 justify-start", Attributes.style "height" "25%" ]
             (List.map
-                (\card ->
-                    Html.div [ Attributes.class "imageContainer border-small border-transparent hover:border-yellow-600" ]
-                        [ Html.div []
-                            [ Html.img [ Attributes.src cardBack ] []
-
-                            -- , Html.span [] [ Html.text "blabla" ]
-                            ]
-                        ]
-                )
+                (viewTheirCard (model.state == Settling))
                 model.they.hand
                 ++ [ Html.div [ Attributes.class "flex-grow playerStats text-right", Attributes.style "font-size" "200%" ]
                         [ Html.div [] [ Html.text <| String.fromInt model.they.health ++ "/20 Health ❤️" ]
@@ -139,7 +131,7 @@ viewBoard model =
                 )
                 [ Maybe.map cardDetails model.they.summon, Maybe.map cardDetails model.you.summon ]
             )
-        , Html.div [ Attributes.class "flex p-1 justify-end text-gray-900", Attributes.style "height" "25%" ]
+        , Html.div [ Attributes.class "you flex p-1 justify-end text-gray-900", Attributes.style "height" "25%" ]
             (Html.div [ Attributes.class "flex-grow playerStats text-gray-600 ", Attributes.style "font-size" "200%" ]
                 [ Html.div [] [ Html.text <| "❤️ Health " ++ String.fromInt model.you.health ++ "/20" ]
                 , Html.div [] [ Html.text <| "🧠 Sanity " ++ String.fromInt model.you.sanity ++ "/20" ]
@@ -151,7 +143,7 @@ viewBoard model =
                      else
                         [ Attributes.class "text-red-600" ]
                     )
-                    [ Html.text <| "✨ Enact scheme" ]
+                    [ Html.text <| "✨ Play scheme" ]
                 ]
                 :: List.indexedMap
                     (\i { card, selected } ->
@@ -181,6 +173,35 @@ viewBoard model =
                     model.you.hand
             )
         ]
+
+
+viewTheirCard : Bool -> { card : Card, selected : Bool } -> Html Msg
+viewTheirCard settling { card, selected } =
+    if selected && settling then
+        let
+            details =
+                Card.cardDetails card
+        in
+        Html.div
+            [ Attributes.class "imageContainer border-small"
+            , Attributes.class "border-transparent"
+            ]
+            [ Html.div []
+                [ Html.img [ Attributes.src details.art ] []
+                , Html.span [ Attributes.class "name" ] [ Html.text details.name ]
+                , Html.span [ Attributes.class "text" ] [ Html.text details.text ]
+                , Html.span [ Attributes.class "cost" ] [ Html.text <| String.fromInt details.cost ]
+                ]
+            ]
+
+    else
+        Html.div [ Attributes.class "imageContainer border-small border-transparent" ]
+            [ Html.div []
+                [ Html.img [ Attributes.src cardBack ] []
+
+                -- , Html.span [] [ Html.text "blabla" ]
+                ]
+            ]
 
 
 
