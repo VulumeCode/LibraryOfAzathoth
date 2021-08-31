@@ -4,6 +4,7 @@ import Browser exposing (Document)
 import Browser.Events
 import Card exposing (..)
 import Dict
+import Extras.Html.Attributes exposing (none)
 import Html exposing (Html)
 import Html.Attributes as Attributes exposing (selected)
 import Html.Events as Events
@@ -140,7 +141,13 @@ viewBoard model =
                 , Html.div [] [ Html.text <| "📖 Wisdom " ++ String.fromInt model.you.wisdomUsed ++ "/" ++ String.fromInt model.you.wisdom ]
                 , Html.div
                     (if schemeValid model.you then
-                        [ Attributes.class "text-blue-600 hover:text-blue-300", Events.on "pointerup" (Decode.succeed <| SubmitScheme) ]
+                        [ Attributes.class "text-blue-600 hover:text-blue-300"
+                        , if model.state == Playing then
+                            Events.on "pointerup" (Decode.succeed <| SubmitScheme)
+
+                          else
+                            none
+                        ]
 
                      else
                         [ Attributes.class "text-red-600" ]
@@ -158,17 +165,20 @@ viewBoard model =
                             [ Attributes.class "imageContainer"
                             , Events.on "pointerup" (Decode.succeed <| SelectCard i)
                             ]
-                            [ Html.div [Attributes.class
-                                (if selected then
-                                    "border-yellow-300 border-opacity-75"
+                            [ Html.div
+                                [ Attributes.class
+                                    (if selected then
+                                        "border-yellow-300 border-opacity-75"
 
-                                 else
-                                    "border-transparent"
-                                )]
+                                     else
+                                        "border-transparent"
+                                    )
+                                ]
                                 [ Html.img [ Attributes.src details.art ] []
-                                , Html.span [ Attributes.class "name" ] [ Html.text details.name ]
+                                , Html.span [ Attributes.class "name" ] [ Html.text <| String.fromInt details.cost ++ " " ++ details.name ]
                                 , Html.span [ Attributes.class "text" ] [ Html.text details.text ]
-                                , Html.span [ Attributes.class "cost" ] [ Html.text <| String.fromInt details.cost ]
+
+                                -- , Html.span [ Attributes.class "cost" ] [ Html.text <| String.fromInt details.cost ]
                                 ]
                             ]
                     )
@@ -326,7 +336,7 @@ settleSchemes ({ you, they } as model) =
     { model
         | you = { you | health = you.health - theirEffect.damage } |> playCards
         , they = { they | health = they.health - yourEffect.damage } |> playCards
-        , state = Settling
+        , state = Playing
     }
 
 
@@ -361,13 +371,18 @@ id x =
     x
 
 
-dealHand : { a | hand : List { card : b, selected : Bool } } -> List b -> { a | hand : List { card : b, selected : Bool } }
+dealHand : { a | hand : List { card : Card, selected : Bool } } -> List Card -> { a | hand : List { card : Card, selected : Bool } }
 dealHand player cards =
-    { player | hand = List.map (\c -> { card = c, selected = False }) <| cards }
+    { player | hand = sortHand <| List.map (\c -> { card = c, selected = False }) <| cards }
 
 
 dealCard ({ hand } as player) c =
-    { player | hand = hand ++ [ { card = c, selected = False } ] }
+    { player | hand = sortHand <| hand ++ [ { card = c, selected = False } ] }
+
+
+sortHand : List { a | card : Card } -> List { a | card : Card }
+sortHand hand =
+    List.sortBy (\h -> cardDetails h.card |> .cost) <| List.sortBy (\h -> cardDetails h.card |> .name) hand
 
 
 selectCard : Player -> Int -> Player

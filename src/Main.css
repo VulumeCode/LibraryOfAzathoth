@@ -83,7 +83,7 @@ button:focus {
 }
 
 .imageContainer img {
-  box-shadow: 2px 2px 5px #00000080;
+  box-shadow: 2px 2px 5px #000000b0;
 
   display: block;
   max-width: none;
@@ -137,13 +137,13 @@ button:focus {
   /* background: linear-gradient(0deg, #f5e7caFF 50%, #f5e7ca00 100%);  */
 }
 .imageContainer span.cost  {
-  text-align: right;
+  text-align: left;
   /* color: #000; */
   position: absolute;
-  right: 0;
+  left: 0;
   bottom: 0;
-  padding-right: 0.5em;
-  padding-bottom: 0.2em;
+  padding-left: 0.5em;
+  padding-bottom: 0.1em;
   width: 100%; 
 }
 .playerStats div {
