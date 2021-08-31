@@ -5,7 +5,7 @@ import Browser.Events
 import Card exposing (..)
 import Dict
 import Extras.Html.Attributes exposing (none)
-import Html exposing (Html)
+import Html exposing (Html, div, text, img, button)
 import Html.Attributes as Attributes exposing (selected)
 import Html.Events as Events
 import Json.Decode as Decode exposing (Value)
@@ -90,56 +90,56 @@ view model =
 
 viewRoot : Model -> Html Msg
 viewRoot model =
-    Html.div [ Attributes.class "flex justify-center h-full items-center select-none font-display relative" ]
+    div [ Attributes.class "flex justify-center h-full items-center select-none font-display relative" ]
         [ viewBoard model
         ]
 
 
 viewBoard : Model -> Html Msg
 viewBoard model =
-    Html.div [ Attributes.class "h-full w-3/4 max-h-screen relative " ]
-        [ Html.div [ Attributes.class "flex p-1 justify-start", Attributes.style "height" "25%" ]
+    div [ Attributes.class "h-full w-3/4 max-h-screen relative " ]
+        [ div [ Attributes.class "flex p-1 justify-start", Attributes.style "height" "25%" ]
             (List.map
                 (viewTheirCard (model.state == Settling))
                 model.they.hand
-                ++ [ Html.div [ Attributes.class "flex-grow playerStats text-right text-gray-600", Attributes.style "font-size" "200%" ]
-                        [ Html.div [] [ Html.text <| String.fromInt model.they.health ++ "/20 Health ❤️" ]
-                        , Html.div [] [ Html.text <| String.fromInt model.they.sanity ++ "/20 Sanity 🧠" ]
-                        , Html.div [] [ Html.text <| String.fromInt model.they.wisdomUsed ++ "/" ++ String.fromInt model.they.wisdom ++ " Wisdom 📖" ]
+                ++ [ div [ Attributes.class "flex-grow playerStats text-right text-gray-600", Attributes.style "font-size" "200%" ]
+                        [ div [] [ text <| String.fromInt model.they.health ++ "/20 Health ❤️" ]
+                        , div [] [ text <| String.fromInt model.they.sanity ++ "/20 Sanity 🧠" ]
+                        , div [] [ text <| String.fromInt model.they.wisdomUsed ++ "/" ++ String.fromInt model.they.wisdom ++ " Wisdom 📖" ]
                         ]
                    ]
             )
-        , Html.div [ Attributes.class "flex p-1 justify-center text-gray-900", Attributes.style "height" "50%" ]
+        , div [ Attributes.class "flex p-1 justify-center text-gray-900", Attributes.style "height" "50%" ]
             (List.map
                 (\mcard ->
                     case mcard of
                         Nothing ->
-                            Html.div [ Attributes.class "imageContainer border-small border-transparent" ]
-                                [ Html.div []
-                                    [ Html.img [ Attributes.src cardBack ] []
+                            div [ Attributes.class "imageContainer border-small border-transparent" ]
+                                [ div []
+                                    [ img [ Attributes.src cardBack ] []
                                     ]
                                 ]
 
                         Just card ->
-                            Html.div [ Attributes.class "imageContainer border-small border-transparent" ]
-                                [ Html.div []
-                                    [ Html.img [ Attributes.src card.art ] []
+                            div [ Attributes.class "imageContainer border-small border-transparent" ]
+                                [ div []
+                                    [ img [ Attributes.src card.art ] []
                                     , Html.span [ Attributes.class "text ", Attributes.style "font-size" "200%" ]
-                                        [ Html.button [ Attributes.class "block" ] [ Html.text "+1: Stab" ]
-                                        , Html.button [ Attributes.class "block" ] [ Html.text "0: Learn" ]
-                                        , Html.button [ Attributes.class "block" ] [ Html.text "-5: Kill" ]
+                                        [ button [ Attributes.class "block" ] [ text "+1: Stab" ]
+                                        , button [ Attributes.class "block" ] [ text "0: Learn" ]
+                                        , button [ Attributes.class "block" ] [ text "-5: Kill" ]
                                         ]
                                     ]
                                 ]
                 )
                 [ Maybe.map cardDetails model.they.summon, Maybe.map cardDetails model.you.summon ]
             )
-        , Html.div [ Attributes.class "you flex p-1  text-gray-900", Attributes.style "height" "25%" ]
-            [ Html.div [ Attributes.class "flex-none playerStats text-gray-600 mr-8 ", Attributes.style "font-size" "200%" ]
-                [ Html.div [] [ Html.text <| "❤️ Health " ++ String.fromInt model.you.health ++ "/20" ]
-                , Html.div [] [ Html.text <| "🧠 Sanity " ++ String.fromInt model.you.sanity ++ "/20" ]
-                , Html.div [] [ Html.text <| "📖 Wisdom " ++ String.fromInt model.you.wisdomUsed ++ "/" ++ String.fromInt model.you.wisdom ]
-                , Html.div
+        , div [ Attributes.class "you flex p-1  text-gray-900", Attributes.style "height" "25%" ]
+            [ div [ Attributes.class "flex-none playerStats text-gray-600 mr-8 ", Attributes.style "font-size" "200%" ]
+                [ div [] [ text <| "❤️ Health " ++ String.fromInt model.you.health ++ "/20" ]
+                , div [] [ text <| "🧠 Sanity " ++ String.fromInt model.you.sanity ++ "/20" ]
+                , div [] [ text <| "📖 Wisdom " ++ String.fromInt model.you.wisdomUsed ++ "/" ++ String.fromInt model.you.wisdom ]
+                , div
                     (if schemeValid model.you then
                         [ Attributes.class "text-blue-600 hover:text-blue-300"
                         , if model.state == Playing then
@@ -152,20 +152,24 @@ viewBoard model =
                      else
                         [ Attributes.class "text-red-600" ]
                     )
-                    [ Html.text <| "✨ Play scheme" ]
+                    [ text <| "✨ Play scheme" ]
                 ]
-            , Html.div [ Attributes.class "flex-grow hand " ] <|
+            , div [ Attributes.class "flex-grow hand " ] <|
                 List.indexedMap
                     (\i { card, selected } ->
                         let
                             details =
                                 Card.cardDetails card
                         in
-                        Html.div
+                        div
                             [ Attributes.class "imageContainer"
-                            , Events.on "pointerup" (Decode.succeed <| SelectCard i)
+                            , if model.state == Playing then
+                                Events.on "pointerup" (Decode.succeed <| SelectCard i)
+
+                              else
+                                none
                             ]
-                            [ Html.div
+                            [ div
                                 [ Attributes.class
                                     (if selected then
                                         "border-yellow-300 border-opacity-75"
@@ -174,11 +178,11 @@ viewBoard model =
                                         "border-transparent"
                                     )
                                 ]
-                                [ Html.img [ Attributes.src details.art ] []
-                                , Html.span [ Attributes.class "name" ] [ Html.text <| String.fromInt details.cost ++ " " ++ details.name ]
-                                , Html.span [ Attributes.class "text" ] [ Html.text details.text ]
+                                [ img [ Attributes.src details.art ] []
+                                , Html.span [ Attributes.class "name" ] [ text <| String.fromInt details.cost ++ " " ++ details.name ]
+                                , Html.span [ Attributes.class "text" ] [ text details.text ]
 
-                                -- , Html.span [ Attributes.class "cost" ] [ Html.text <| String.fromInt details.cost ]
+                                -- , Html.span [ Attributes.class "cost" ] [ text <| String.fromInt details.cost ]
                                 ]
                             ]
                     )
@@ -194,22 +198,22 @@ viewTheirCard settling { card, selected } =
             details =
                 Card.cardDetails card
         in
-        Html.div
+        div
             [ Attributes.class "imageContainer border-small"
             , Attributes.class "border-transparent"
             ]
-            [ Html.div []
-                [ Html.img [ Attributes.src details.art ] []
-                , Html.span [ Attributes.class "name" ] [ Html.text details.name ]
-                , Html.span [ Attributes.class "text" ] [ Html.text details.text ]
-                , Html.span [ Attributes.class "cost" ] [ Html.text <| String.fromInt details.cost ]
+            [ div []
+                [ img [ Attributes.src details.art ] []
+                , Html.span [ Attributes.class "name" ] [ text details.name ]
+                , Html.span [ Attributes.class "text" ] [ text details.text ]
+                , Html.span [ Attributes.class "cost" ] [ text <| String.fromInt details.cost ]
                 ]
             ]
 
     else
-        Html.div [ Attributes.class "imageContainer border-small border-transparent" ]
-            [ Html.div []
-                [ Html.img [ Attributes.src cardBack ] []
+        div [ Attributes.class "imageContainer border-small border-transparent" ]
+            [ div []
+                [ img [ Attributes.src cardBack ] []
 
                 -- , Html.span [] [ Html.text "blabla" ]
                 ]
