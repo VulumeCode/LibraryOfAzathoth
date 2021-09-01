@@ -19,8 +19,8 @@ import Svg exposing (Svg)
 import Svg.Attributes
 import Task
 import Time
-
 import Types exposing (..)
+
 
 type alias Model =
     { you : Player
@@ -28,6 +28,7 @@ type alias Model =
     , turn : Int
     , state : State
     }
+
 
 type State
     = Playing
@@ -46,7 +47,6 @@ initPlayer =
     , dead = False
     , draw = 0
     }
-
 
 
 handSize : number
@@ -253,8 +253,9 @@ update msg ({ you, they } as model) =
 
         SettleSchemes ->
             let
-                settled = model |> settleSchemes
-            in 
+                settled =
+                    model |> settleSchemes
+            in
             ( settled
             , Cmd.batch
                 [ Random.generate DealYouCards (Random.list settled.you.draw Card.random)
@@ -322,10 +323,19 @@ settleSchemes ({ you, they } as model) =
                         Draw f ->
                             { total | draw = total.draw + f from to }
 
+                        GainWisdom f ->
+                            { total | gainWisdom = total.gainWisdom + f from to }
+
+                        GainSanity f ->
+                            { total | gainSanity = total.gainSanity + f from to }
+
+                        GainHealth f ->
+                            { total | gainHealth = total.gainHealth + f from to }
+
                         _ ->
                             total
                 )
-                { damage = 0, draw = 0 }
+                { damage = 0, draw = 0, gainWisdom = 0, gainSanity = 0, gainHealth = 0 }
             <|
                 List.concatMap .effect scheme
 
@@ -338,14 +348,18 @@ settleSchemes ({ you, they } as model) =
     { model
         | you =
             { you
-                | health = you.health - theirEffect.damage
+                | health = you.health - theirEffect.damage + yourEffect.gainHealth
                 , draw = you.draw + yourEffect.draw
+                , wisdom = you.wisdom + yourEffect.gainWisdom
+                , sanity = you.sanity + yourEffect.gainSanity
             }
                 |> playCards
         , they =
             { they
-                | health = they.health - yourEffect.damage
+                | health = they.health - yourEffect.damage + theirEffect.gainHealth
                 , draw = they.draw + theirEffect.draw
+                , wisdom = they.wisdom + theirEffect.gainWisdom
+                , sanity = they.sanity + theirEffect.gainSanity
             }
                 |> playCards
         , state = Playing

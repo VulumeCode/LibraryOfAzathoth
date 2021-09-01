@@ -16,6 +16,7 @@ type Effect =
     | Draw (Player -> Player -> Int)
     | GainWisdom (Player -> Player -> Int)
     | GainSanity (Player -> Player -> Int)
+    | GainHealth (Player -> Player -> Int)
     | Debug
 
 type alias Player =
