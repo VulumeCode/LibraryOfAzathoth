@@ -103,11 +103,13 @@ type alias Player =
     , wisdomUsed : Int
     , summon : Maybe Card
     , dead : Bool
+    , draw: Int
     }
 
 type Effect = 
     Damage (Player -> Player -> Int)
     | Draw (Player -> Player -> Int)
+    | Debug
 
 cardDetails : Card -> CardDetails
 cardDetails card =
@@ -117,7 +119,7 @@ cardDetails card =
             , cost = 1
             , text = "Do stuff."
             , art = "https://upload.wikimedia.org/wikipedia/en/1/11/Wands01.jpg"
-            , effect = [Damage (\_ _ -> 10)]
+            , effect = [Draw (\_ _ -> 1)]
             }
 
         W2 ->
@@ -125,7 +127,7 @@ cardDetails card =
             , cost = 1
             , text = "Do stuff."
             , art = "https://upload.wikimedia.org/wikipedia/en/0/0f/Wands02.jpg"
-            , effect = [Damage (\_ _ -> 10)]
+            , effect = [Draw (\_ _ -> 1)]
             }
 
         W3 ->
@@ -133,7 +135,7 @@ cardDetails card =
             , cost = 1
             , text = "Do stuff."
             , art = "https://upload.wikimedia.org/wikipedia/en/f/ff/Wands03.jpg"
-            , effect = [Damage (\_ _ -> 10)]
+            , effect = [Draw (\_ _ -> 1)]
             }
 
         W4 ->
@@ -141,7 +143,7 @@ cardDetails card =
             , cost = 1
             , text = "Do stuff."
             , art = "https://upload.wikimedia.org/wikipedia/en/a/a4/Wands04.jpg"
-            , effect = [Damage (\_ _ -> 10)]
+            , effect = [Draw (\_ _ -> 1)]
             }
 
         W5 ->
@@ -149,7 +151,7 @@ cardDetails card =
             , cost = 2
             , text = "Do stuff."
             , art = "https://upload.wikimedia.org/wikipedia/en/9/9d/Wands05.jpg"
-            , effect = [Damage (\_ _ -> 10)]
+            , effect = [Draw (\_ _ -> 1)]
             }
 
         W6 ->
@@ -157,7 +159,7 @@ cardDetails card =
             , cost = 2
             , text = "Do stuff."
             , art = "https://upload.wikimedia.org/wikipedia/en/3/3b/Wands06.jpg"
-            , effect = [Damage (\_ _ -> 10)]
+            , effect = [Draw (\_ _ -> 1)]
             }
 
         W7 ->
@@ -165,7 +167,7 @@ cardDetails card =
             , cost = 2
             , text = "Do stuff."
             , art = "https://upload.wikimedia.org/wikipedia/en/e/e4/Wands07.jpg"
-            , effect = [Damage (\_ _ -> 10)]
+            , effect = [Draw (\_ _ -> 1)]
             }
 
         W8 ->
@@ -173,7 +175,7 @@ cardDetails card =
             , cost = 2
             , text = "Do stuff."
             , art = "https://upload.wikimedia.org/wikipedia/en/6/6b/Wands08.jpg"
-            , effect = [Damage (\_ _ -> 10)]
+            , effect = [Draw (\_ _ -> 1)]
             }
 
         W9 ->
@@ -181,7 +183,7 @@ cardDetails card =
             , cost = 2
             , text = "Do stuff."
             , art = "https://upload.wikimedia.org/wikipedia/en/e/e7/Wands09.jpg"
-            , effect = [Damage (\_ _ -> 10)]
+            , effect = [Draw (\_ _ -> 1)]
             }
 
         W10 ->
@@ -189,7 +191,7 @@ cardDetails card =
             , cost = 3
             , text = "Do stuff."
             , art = "https://upload.wikimedia.org/wikipedia/en/0/0b/Wands10.jpg"
-            , effect = [Damage (\_ _ -> 10)]
+            , effect = [Draw (\_ _ -> 1)]
             }
 
         W11 ->
@@ -197,7 +199,7 @@ cardDetails card =
             , cost = 3
             , text = "Draw a card."
             , art = "https://upload.wikimedia.org/wikipedia/en/6/6a/Wands11.jpg"
-            , effect = [Damage (\_ _ -> 10)]
+            , effect = [Draw (\_ _ -> 1)]
             }
 
         W12 ->
@@ -205,7 +207,7 @@ cardDetails card =
             , cost = 3
             , text = "Gain 1 📖 Wisdom"
             , art = "https://upload.wikimedia.org/wikipedia/en/1/16/Wands12.jpg"
-            , effect = [Damage (\_ _ -> 10)]
+            , effect = [Draw (\_ _ -> 1)]
             }
 
         W13 ->
@@ -213,7 +215,7 @@ cardDetails card =
             , cost = 4
             , text = "Do stuff."
             , art = "https://upload.wikimedia.org/wikipedia/en/0/0d/Wands13.jpg"
-            , effect = [Damage (\_ _ -> 10)]
+            , effect = [Draw (\_ _ -> 1)]
             }
 
         W14 ->
@@ -221,7 +223,7 @@ cardDetails card =
             , cost = 4
             , text = "Do stuff."
             , art = "https://upload.wikimedia.org/wikipedia/en/c/ce/Wands14.jpg"
-            , effect = [Damage (\_ _ -> 10)]
+            , effect = [Draw (\_ _ -> 1)]
             }
 
         S1 ->

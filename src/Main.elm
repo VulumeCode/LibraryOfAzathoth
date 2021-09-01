@@ -5,10 +5,11 @@ import Browser.Events
 import Card exposing (..)
 import Dict
 import Extras.Html.Attributes exposing (none)
-import Html exposing (Html, div, text, img, button)
+import Html exposing (Html, button, div, img, text)
 import Html.Attributes as Attributes exposing (selected)
 import Html.Events as Events
 import Json.Decode as Decode exposing (Value)
+import List exposing (map)
 import List.Extra exposing (..)
 import Process
 import Random
@@ -36,6 +37,7 @@ type alias Player =
     , wisdomUsed : Int
     , summon : Maybe Card
     , dead : Bool
+    , draw : Int
     }
 
 
@@ -48,6 +50,7 @@ initPlayer =
     , wisdomUsed = 0
     , summon = Just W14
     , dead = False
+    , draw = 0
     }
 
 
@@ -99,7 +102,7 @@ viewBoard : Model -> Html Msg
 viewBoard model =
     div [ Attributes.class "h-full w-3/4 max-h-screen relative " ]
         [ div [ Attributes.class "flex p-1 justify-start", Attributes.style "height" "25%" ]
-            (List.map
+            (map
                 (viewTheirCard (model.state == Settling))
                 model.they.hand
                 ++ [ div [ Attributes.class "flex-grow playerStats text-right text-gray-600", Attributes.style "font-size" "200%" ]
@@ -110,7 +113,7 @@ viewBoard model =
                    ]
             )
         , div [ Attributes.class "flex p-1 justify-center text-gray-900", Attributes.style "height" "50%" ]
-            (List.map
+            (map
                 (\mcard ->
                     case mcard of
                         Nothing ->
@@ -231,8 +234,8 @@ type Msg
     | SettleSchemes
     | DealYouHand (List Card)
     | DealTheyHand (List Card)
-    | DealYouCard Card
-    | DealTheyCard Card
+    | DealYouCards (List Card)
+    | DealTheyCards (List Card)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -260,20 +263,23 @@ update msg ({ you, they } as model) =
             )
 
         SettleSchemes ->
-            ( model |> settleSchemes
+            let
+                settled = model |> settleSchemes
+            in 
+            ( settled
             , Cmd.batch
-                [ Random.generate DealYouCard Card.random
-                , Random.generate DealTheyCard Card.random
+                [ Random.generate DealYouCards (Random.list settled.you.draw Card.random)
+                , Random.generate DealTheyCards (Random.list settled.they.draw Card.random)
                 ]
             )
 
-        DealYouCard c ->
-            ( { model | you = dealCard you c }
+        DealYouCards cs ->
+            ( { model | you = dealCards you cs }
             , Cmd.none
             )
 
-        DealTheyCard c ->
-            ( { model | they = dealCard they c }
+        DealTheyCards cs ->
+            ( { model | they = dealCards they cs }
             , Cmd.none
             )
 
@@ -300,7 +306,7 @@ randomAI ({ they } as model) =
             Maybe.withDefault they <|
                 List.head <|
                     List.filter schemeValid <|
-                        List.map (\option -> updateCosts { they | hand = option }) <|
+                        map (\option -> updateCosts { they | hand = option }) <|
                             possibleHands they.hand
     }
 
@@ -309,7 +315,7 @@ settleSchemes : Model -> Model
 settleSchemes ({ you, they } as model) =
     let
         getScheme hand =
-            List.map (\c -> cardDetails c.card) <| List.filter (\held -> held.selected) <| hand
+            map (\c -> cardDetails c.card) <| List.filter (\held -> held.selected) <| hand
 
         yourScheme =
             getScheme you.hand
@@ -324,10 +330,13 @@ settleSchemes ({ you, they } as model) =
                         Damage f ->
                             { total | damage = total.damage + f from to }
 
+                        Draw f ->
+                            { total | draw = total.draw + f from to }
+
                         _ ->
                             total
                 )
-                { damage = 0 }
+                { damage = 0, draw = 0 }
             <|
                 List.concatMap .effect scheme
 
@@ -338,25 +347,46 @@ settleSchemes ({ you, they } as model) =
             getEffect they you theirScheme
     in
     { model
-        | you = { you | health = you.health - theirEffect.damage } |> playCards
-        , they = { they | health = they.health - yourEffect.damage } |> playCards
+        | you =
+            { you
+                | health = you.health - theirEffect.damage
+                , draw = you.draw + yourEffect.draw
+            }
+                |> playCards
+        , they =
+            { they
+                | health = they.health - yourEffect.damage
+                , draw = they.draw + theirEffect.draw
+            }
+                |> playCards
         , state = Playing
+    }
+        |> calcGameOver
+
+
+calcGameOver : Model -> Model
+calcGameOver model =
+    { model
+        | state =
+            if model.you.dead || model.they.dead then
+                GameOver
+
+            else
+                model.state
     }
 
 
-
--- { model | you = playCards you }
-
-
 playCards : Player -> Player
-playCards ({ hand, wisdom, wisdomUsed, sanity } as player) =
+playCards ({ hand, wisdom, wisdomUsed, sanity, draw } as player) =
     { player
         | hand = List.filter (\held -> not held.selected) <| hand
         , wisdom = wisdom + 1
         , wisdomUsed = 0
         , sanity = sanity - wisdomUsed
+        , draw = draw + 1
     }
         |> drainSanityFromHealth
+        |> calcPlayerDead
 
 
 drainSanityFromHealth : { a | sanity : number, health : number } -> { a | sanity : number, health : number }
@@ -371,17 +401,31 @@ drainSanityFromHealth player =
         }
 
 
+calcPlayerDead : Player -> Player
+calcPlayerDead player =
+    { player
+        | dead = player.health <= 0
+    }
+
+
 id x =
     x
 
 
-dealHand : { a | hand : List { card : Card, selected : Bool } } -> List Card -> { a | hand : List { card : Card, selected : Bool } }
+dealHand : Player -> List Card -> Player
 dealHand player cards =
-    { player | hand = sortHand <| List.map (\c -> { card = c, selected = False }) <| cards }
+    { player
+        | hand = sortHand <| map (\c -> { card = c, selected = False }) <| cards
+        , draw = 0
+    }
 
 
-dealCard ({ hand } as player) c =
-    { player | hand = sortHand <| hand ++ [ { card = c, selected = False } ] }
+dealCards : Player -> List Card -> Player
+dealCards ({ hand } as player) cs =
+    { player
+        | hand = sortHand <| List.append hand (map (\c -> { card = c, selected = False }) cs)
+        , draw = 0
+    }
 
 
 sortHand : List { a | card : Card } -> List { a | card : Card }
@@ -409,7 +453,7 @@ selectCard ({ hand } as player) j =
 updateCosts : Player -> Player
 updateCosts ({ hand } as player) =
     { player
-        | wisdomUsed = List.sum <| List.map (\h -> (cardDetails h.card).cost) <| List.filter .selected hand
+        | wisdomUsed = List.sum <| map (\h -> (cardDetails h.card).cost) <| List.filter .selected hand
     }
 
 
