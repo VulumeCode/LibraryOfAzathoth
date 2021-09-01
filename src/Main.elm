@@ -20,6 +20,7 @@ import Svg.Attributes
 import Task
 import Time
 
+import Types exposing (..)
 
 type alias Model =
     { you : Player
@@ -28,17 +29,10 @@ type alias Model =
     , state : State
     }
 
-
-type alias Player =
-    { hand : List { card : Card, selected : Bool }
-    , health : Int
-    , sanity : Int
-    , wisdom : Int
-    , wisdomUsed : Int
-    , summon : Maybe Card
-    , dead : Bool
-    , draw : Int
-    }
+type State
+    = Playing
+    | Settling
+    | GameOver
 
 
 initPlayer : Player
@@ -53,11 +47,6 @@ initPlayer =
     , draw = 0
     }
 
-
-type State
-    = Playing
-    | Settling
-    | GameOver
 
 
 handSize : number
