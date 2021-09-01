@@ -14,6 +14,8 @@ type alias CardDetails =
 type Effect = 
     Damage (Player -> Player -> Int)
     | Draw (Player -> Player -> Int)
+    | GainWisdom (Player -> Player -> Int)
+    | GainSanity (Player -> Player -> Int)
     | Debug
 
 type alias Player =
