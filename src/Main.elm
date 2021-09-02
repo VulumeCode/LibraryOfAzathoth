@@ -20,7 +20,8 @@ import Svg.Attributes
 import Task
 import Time
 import Types exposing (..)
-
+import Html.Parser as Parser
+import Html.Parser.Util as Parser
 
 type alias Model =
     { you : Player
@@ -95,8 +96,8 @@ viewBoard model =
                 (viewTheirCard (model.state == Settling))
                 model.they.hand
                 ++ [ div [ Attributes.class "flex-grow playerStats text-right text-gray-600", Attributes.style "font-size" "200%" ]
-                        [ div [] [ text <| String.fromInt model.they.health ++ "/20 Health ❤️" ]
-                        , div [] [ text <| String.fromInt model.they.sanity ++ "/20 Sanity 🧠" ]
+                        [ div [] [ text <| String.fromInt model.they.health ++ " Health ❤️" ]
+                        , div [] [ text <| String.fromInt model.they.sanity ++ " Sanity 🧠" ]
                         , div [] [ text <| String.fromInt model.they.wisdomUsed ++ "/" ++ String.fromInt model.they.wisdom ++ " Wisdom 📖" ]
                         ]
                    ]
@@ -128,8 +129,8 @@ viewBoard model =
             )
         , div [ Attributes.class "you flex p-1  text-gray-900", Attributes.style "height" "25%" ]
             [ div [ Attributes.class "flex-none playerStats text-gray-600 mr-8 ", Attributes.style "font-size" "200%" ]
-                [ div [] [ text <| "❤️ Health " ++ String.fromInt model.you.health ++ "/20" ]
-                , div [] [ text <| "🧠 Sanity " ++ String.fromInt model.you.sanity ++ "/20" ]
+                [ div [] [ text <| "❤️ Health " ++ String.fromInt model.you.health ]
+                , div [] [ text <| "🧠 Sanity " ++ String.fromInt model.you.sanity ]
                 , div [] [ text <| "📖 Wisdom " ++ String.fromInt model.you.wisdomUsed ++ "/" ++ String.fromInt model.you.wisdom ]
                 , div
                     (if schemeValid model.you then
@@ -172,7 +173,7 @@ viewBoard model =
                                 ]
                                 [ img [ Attributes.src details.art ] []
                                 , Html.span [ Attributes.class "name" ] [ text <| String.fromInt details.cost ++ " " ++ details.name ]
-                                , Html.span [ Attributes.class "text" ] [ text details.text ]
+                                , Html.span [ Attributes.class "text" ] (Parser.toVirtualDom (Result.withDefault [Parser.Comment "String"] (Parser.run details.text )))
 
                                 -- , Html.span [ Attributes.class "cost" ] [ text <| String.fromInt details.cost ]
                                 ]

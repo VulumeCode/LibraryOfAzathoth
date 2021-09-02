@@ -136,6 +136,13 @@ button:focus {
   background: #f5e7caD0;
   /* background: linear-gradient(0deg, #f5e7caFF 50%, #f5e7ca00 100%);  */
 }
+
+.imageContainer span.text  hr {
+  border-top: 1px solid rgb(26, 32, 44, 0.75);
+  margin: 0.4em;
+}
+
+
 .imageContainer span.cost  {
   text-align: left;
   /* color: #000; */

@@ -162,7 +162,7 @@ cardDetails card =
         S6 ->
             { name = "Science"
             , cost = 2
-            , text = "Deal 2 damage for every card in your scheme. <i>Baboom!</i>"
+            , text = "Deal 2 damage for every card in your scheme.<hr><i>Baboom!</i>"
             , art = "https://upload.wikimedia.org/wikipedia/en/2/29/Swords06.jpg"
             , effect = [ Damage (\you _ -> 2 * (List.length <| List.filter .selected you.hand)) ]
             }
@@ -274,7 +274,7 @@ cardDetails card =
         C6 ->
             { name = "Innocence"
             , cost = 2
-            , text = "Gain 2 wisdom for every card in your scheme. <i>Baboom!</i>"
+            , text = "Gain 2 wisdom for every card in your scheme.<hr><i>Baboom!</i>"
             , art = "https://upload.wikimedia.org/wikipedia/en/1/17/Cups06.jpg"
             , effect = [ GainWisdom (\you _ -> 2 * (List.length <| List.filter .selected you.hand)) ]
             }
@@ -386,7 +386,7 @@ cardDetails card =
         P6 ->
             { name = "Innocence"
             , cost = 2
-            , text = "Gain 2 life for every card in your scheme. <i>Baboom!</i>"
+            , text = "Gain 2 life for every card in your scheme.<hr><i>Baboom!</i>"
             , art = "https://upload.wikimedia.org/wikipedia/en/a/a6/Pents06.jpg"
             , effect = [ GainHealth (\you _ -> 2 * (List.length <| List.filter .selected you.hand)) ]
             }
