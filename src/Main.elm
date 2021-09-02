@@ -11,7 +11,7 @@ import Html.Events as Events
 import Html.Parser as Parser
 import Html.Parser.Util as Parser
 import Json.Decode as Decode exposing (Value)
-import List exposing (concatMap, foldl, map)
+import List exposing (concatMap, foldl, map,length, filter)
 import List.Extra exposing (..)
 import Process
 import Random
@@ -22,7 +22,7 @@ import Svg.Attributes
 import Task
 import Time
 import Types exposing (..)
-
+import Maybe.Extra as Maybe exposing (orElse)
 
 type alias Model =
     { you : Player
@@ -43,9 +43,9 @@ initPlayer =
     { hand = []
     , health = 20
     , sanity = 20
-    , wisdom = 1
+    , wisdom = 4
     , wisdomUsed = 0
-    , summon = Just W14
+    , summon = Nothing
     , dead = False
     , draw = 0
     }
@@ -97,7 +97,7 @@ viewBoard model =
                 (viewTheirCard (model.state == Settling))
                 model.they.hand
                 ++ [ div [ Attributes.class "flex-grow playerStats text-right text-gray-600", Attributes.style "font-size" "200%" ]
-                        [ div [] [ text <| String.fromInt model.they.health ++ " Health ❤️" ]
+                        [ div [] [ text <| String.fromInt model.they.health ++ " Life ❤️" ]
                         , div [] [ text <| String.fromInt model.they.sanity ++ " Sanity 🧠" ]
                         , div [] [ text <| String.fromInt model.they.wisdomUsed ++ "/" ++ String.fromInt model.they.wisdom ++ " Wisdom 📖" ]
                         ]
@@ -130,7 +130,7 @@ viewBoard model =
             )
         , div [ Attributes.class "you flex p-1  text-gray-900", Attributes.style "height" "25%" ]
             [ div [ Attributes.class "flex-none playerStats text-gray-600 mr-8 ", Attributes.style "font-size" "200%" ]
-                [ div [] [ text <| "❤️ Health " ++ String.fromInt model.you.health ]
+                [ div [] [ text <| "❤️ Life " ++ String.fromInt model.you.health ]
                 , div [] [ text <| "🧠 Sanity " ++ String.fromInt model.you.sanity ]
                 , div [] [ text <| "📖 Wisdom " ++ String.fromInt model.you.wisdomUsed ++ "/" ++ String.fromInt model.you.wisdom ]
                 , div
@@ -249,7 +249,7 @@ update msg ({ you, they } as model) =
 
         SubmitScheme ->
             ( { model | state = Settling } |> randomAI
-            , Process.sleep 2000
+            , Process.sleep 200
                 |> Task.perform (\_ -> SettleSchemes)
             )
 
@@ -331,10 +331,13 @@ settleSchemes ({ you, they } as model) =
                         GainHealth f ->
                             { total | gainHealth = total.gainHealth + f from to }
 
+                        Summon m -> 
+                            { total | summon = Just m}
+
                         _ ->
                             total
                 )
-                { damage = 0, draw = 0, gainWisdom = 0, gainSanity = 0, gainHealth = 0 }
+                { damage = 0, draw = 0, gainWisdom = 0, gainSanity = 0, gainHealth = 0 , summon =  Nothing}
             <|
                 concatMap .effect scheme
 
@@ -351,6 +354,7 @@ settleSchemes ({ you, they } as model) =
                 , draw = you.draw + yourEffect.draw
                 , wisdom = you.wisdom + yourEffect.gainWisdom
                 , sanity = you.sanity + yourEffect.gainSanity
+                , summon = yourEffect.summon|> orElse you.summon
             }
                 |> playCards
         , they =
@@ -359,6 +363,7 @@ settleSchemes ({ you, they } as model) =
                 , draw = they.draw + theirEffect.draw
                 , wisdom = they.wisdom + theirEffect.gainWisdom
                 , sanity = they.sanity + theirEffect.gainSanity
+                , summon = theirEffect.summon|> orElse they.summon
             }
                 |> playCards
         , state = Playing
@@ -494,6 +499,8 @@ updateCosts ({ hand } as player) =
 schemeValid : Player -> Bool
 schemeValid player =
     player.wisdomUsed <= player.wisdom
+    && 
+    1 >= (length <| (filter (\c-> c.cardType == Types.M)) (getScheme player.hand))
 
 
 subscriptions : Model -> Sub Msg

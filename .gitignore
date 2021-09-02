@@ -3,4 +3,6 @@ npm-debug.log
 /elm-stuff
 /dist
 /public/images/cards/*.jpg
+/public/images/cards/*.png
+/psd
 .DS_Store

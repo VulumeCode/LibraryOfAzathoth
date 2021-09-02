@@ -1,23 +1,7 @@
 module Types exposing (..)
 
 
-type alias CardDetails =
-    { name : String
-    , cost : Int
-    , text : String
-    , art : String
-    , effect : List Effect
-    }
 
-
-type Effect
-    = Damage (Player -> Player -> Int)
-    | Draw (Player -> Player -> Int)
-    | GainWisdom (Player -> Player -> Int)
-    | GainSanity (Player -> Player -> Int)
-    | GainHealth (Player -> Player -> Int)
-    | CostMod (Player -> Held -> Held -> Int)
-    | Debug
 
 
 type alias Player =
@@ -38,6 +22,28 @@ type alias Held =
     , cost : Int
     }
 
+type alias CardDetails =
+    { name : String
+    , cost : Int
+    , text : String
+    , art : String
+    , effect : List Effect
+    , cardType : CardType
+    }
+
+type Effect
+    = Damage (Player -> Player -> Int)
+    | Draw (Player -> Player -> Int)
+    | GainWisdom (Player -> Player -> Int)
+    | GainSanity (Player -> Player -> Int)
+    | GainHealth (Player -> Player -> Int)
+    | Summon Card
+    | CostMod (Player -> Held -> Held -> Int)
+    | Debug
+
+
+type CardType
+    = W | S | C | P | M 
 
 type Card
     = W1
@@ -118,4 +124,3 @@ type Card
     | M19
     | M20
     | M21
-    | M22
