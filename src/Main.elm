@@ -173,7 +173,7 @@ viewBoard model =
                                     )
                                 ]
                                 [ img [ Attributes.src details.art ] []
-                                , Html.span [ Attributes.class "name" ] [ text <| String.fromInt cost ++ " ∞ " ++ details.name ]
+                                , Html.span [ Attributes.class "name" ] [ text <| String.fromInt cost ++ " " ++ details.name ]
                                 , Html.span [ Attributes.class "text" ] (Parser.toVirtualDom (Result.withDefault [ Parser.Comment "String" ] (Parser.run details.text)))
 
                                 -- , Html.span [ Attributes.class "cost" ] [ text <| String.fromInt details.cost ]
