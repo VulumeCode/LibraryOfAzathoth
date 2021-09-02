@@ -8,8 +8,10 @@ import Extras.Html.Attributes exposing (none)
 import Html exposing (Html, button, div, img, text)
 import Html.Attributes as Attributes exposing (selected)
 import Html.Events as Events
+import Html.Parser as Parser
+import Html.Parser.Util as Parser
 import Json.Decode as Decode exposing (Value)
-import List exposing (map)
+import List exposing (concatMap, foldl, map)
 import List.Extra exposing (..)
 import Process
 import Random
@@ -20,8 +22,7 @@ import Svg.Attributes
 import Task
 import Time
 import Types exposing (..)
-import Html.Parser as Parser
-import Html.Parser.Util as Parser
+
 
 type alias Model =
     { you : Player
@@ -149,7 +150,7 @@ viewBoard model =
                 ]
             , div [ Attributes.class "flex-grow hand " ] <|
                 List.indexedMap
-                    (\i { card, selected } ->
+                    (\i { card, selected, cost } ->
                         let
                             details =
                                 Card.cardDetails card
@@ -172,8 +173,8 @@ viewBoard model =
                                     )
                                 ]
                                 [ img [ Attributes.src details.art ] []
-                                , Html.span [ Attributes.class "name" ] [ text <| String.fromInt details.cost ++ " " ++ details.name ]
-                                , Html.span [ Attributes.class "text" ] (Parser.toVirtualDom (Result.withDefault [Parser.Comment "String"] (Parser.run details.text )))
+                                , Html.span [ Attributes.class "name" ] [ text <| String.fromInt cost ++ " ∞ " ++ details.name ]
+                                , Html.span [ Attributes.class "text" ] (Parser.toVirtualDom (Result.withDefault [ Parser.Comment "String" ] (Parser.run details.text)))
 
                                 -- , Html.span [ Attributes.class "cost" ] [ text <| String.fromInt details.cost ]
                                 ]
@@ -184,8 +185,8 @@ viewBoard model =
         ]
 
 
-viewTheirCard : Bool -> { card : Card, selected : Bool } -> Html Msg
-viewTheirCard settling { card, selected } =
+viewTheirCard : Bool -> { card : Card, selected : Bool, cost : Int } -> Html Msg
+viewTheirCard settling { card, selected, cost } =
     if selected && settling then
         let
             details =
@@ -199,7 +200,7 @@ viewTheirCard settling { card, selected } =
                 [ img [ Attributes.src details.art ] []
                 , Html.span [ Attributes.class "name" ] [ text details.name ]
                 , Html.span [ Attributes.class "text" ] [ text details.text ]
-                , Html.span [ Attributes.class "cost" ] [ text <| String.fromInt details.cost ]
+                , Html.span [ Attributes.class "cost" ] [ text <| String.fromInt cost ]
                 ]
             ]
 
@@ -285,7 +286,7 @@ possibleHands list =
             [ [] ]
 
         head :: rest ->
-            List.concatMap
+            concatMap
                 (\r -> [ { head | selected = True } :: r, { head | selected = False } :: r ])
                 (possibleHands rest)
 
@@ -305,9 +306,6 @@ randomAI ({ they } as model) =
 settleSchemes : Model -> Model
 settleSchemes ({ you, they } as model) =
     let
-        getScheme hand =
-            map (\c -> cardDetails c.card) <| List.filter (\held -> held.selected) <| hand
-
         yourScheme =
             getScheme you.hand
 
@@ -315,7 +313,7 @@ settleSchemes ({ you, they } as model) =
             getScheme they.hand
 
         getEffect from to scheme =
-            List.foldl
+            foldl
                 (\step total ->
                     case step of
                         Damage f ->
@@ -338,7 +336,7 @@ settleSchemes ({ you, they } as model) =
                 )
                 { damage = 0, draw = 0, gainWisdom = 0, gainSanity = 0, gainHealth = 0 }
             <|
-                List.concatMap .effect scheme
+                concatMap .effect scheme
 
         yourEffect =
             getEffect you they yourScheme
@@ -419,7 +417,7 @@ id x =
 dealHand : Player -> List Card -> Player
 dealHand player cards =
     { player
-        | hand = sortHand <| map (\c -> { card = c, selected = False }) <| cards
+        | hand = sortHand <| map (\c -> { card = c, selected = False, cost = (cardDetails c).cost }) <| cards
         , draw = 0
     }
 
@@ -427,7 +425,7 @@ dealHand player cards =
 dealCards : Player -> List Card -> Player
 dealCards ({ hand } as player) cs =
     { player
-        | hand = sortHand <| List.append hand (map (\c -> { card = c, selected = False }) cs)
+        | hand = sortHand <| List.append hand (map (\c -> { card = c, selected = False, cost = (cardDetails c).cost }) cs)
         , draw = 0
     }
 
@@ -454,10 +452,42 @@ selectCard ({ hand } as player) j =
         |> updateCosts
 
 
+getScheme hand =
+    map (\c -> cardDetails c.card) <| List.filter (\held -> held.selected) <| hand
+
+
 updateCosts : Player -> Player
 updateCosts ({ hand } as player) =
+    let
+        initCosts =
+            map (\held -> { held | cost = (cardDetails held.card).cost })
+
+        playerScheme =
+            getScheme player.hand
+
+        modCosts costMod h =
+            case costMod of
+                CostMod f ->
+                    map (\held -> { held | cost = held.cost + f player { card = M12, selected = False, cost = 0 } held }) h
+
+                _ ->
+                    h
+
+        allModCosts h =
+            foldl modCosts h (concatMap .effect playerScheme)
+
+        clampCosts =
+            map (\held -> { held | cost = max 0 held.cost })
+
+        updatedHand =
+            hand
+                |> initCosts
+                |> allModCosts
+                |> clampCosts
+    in
     { player
-        | wisdomUsed = List.sum <| map (\h -> (cardDetails h.card).cost) <| List.filter .selected hand
+        | hand = updatedHand
+        , wisdomUsed = List.sum <| map (\h -> h.cost) <| List.filter .selected updatedHand
     }
 
 

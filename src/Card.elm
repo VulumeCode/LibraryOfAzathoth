@@ -314,9 +314,9 @@ cardDetails card =
         C11 ->
             { name = "Synchronicity"
             , cost = 3
-            , text = "Gain 2 wisdom."
+            , text = "Other cards in your scheme cost 1 less to cast."
             , art = "https://upload.wikimedia.org/wikipedia/en/a/ad/Cups11.jpg"
-            , effect = [ GainWisdom (\_ _ -> 2) ]
+            , effect = [ CostMod (\_ this other -> if this /= other then -1 else 0) ]
             }
 
         C12 ->
