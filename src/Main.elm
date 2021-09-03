@@ -11,8 +11,9 @@ import Html.Events as Events
 import Html.Parser as Parser
 import Html.Parser.Util as Parser
 import Json.Decode as Decode exposing (Value)
-import List exposing (concatMap, foldl, map,length, filter)
+import List exposing (concatMap, filter, foldl, length, map)
 import List.Extra exposing (..)
+import Maybe.Extra as Maybe exposing (orElse)
 import Process
 import Random
 import Set
@@ -22,7 +23,7 @@ import Svg.Attributes
 import Task
 import Time
 import Types exposing (..)
-import Maybe.Extra as Maybe exposing (orElse)
+
 
 type alias Model =
     { you : Player
@@ -92,30 +93,30 @@ viewRoot model =
 viewBoard : Model -> Html Msg
 viewBoard model =
     div [ Attributes.class "h-full w-3/4 max-h-screen relative " ]
-        [ div [ Attributes.class "flex p-1 justify-start", Attributes.style "height" "25%" ]
-            (map
-                (viewTheirCard (model.state == Settling))
-                model.they.hand
-                ++ [ div [ Attributes.class "flex-grow playerStats text-right text-gray-600", Attributes.style "font-size" "200%" ]
-                        [ div [] [ text <| String.fromInt model.they.health ++ " Life ❤️" ]
-                        , div [] [ text <| String.fromInt model.they.sanity ++ " Sanity 🧠" ]
-                        , div [] [ text <| String.fromInt model.they.wisdomUsed ++ "/" ++ String.fromInt model.they.wisdom ++ " Wisdom 📖" ]
-                        ]
-                   ]
-            )
-        , div [ Attributes.class "flex p-1 justify-center text-gray-900", Attributes.style "height" "50%" ]
+        [ div [ Attributes.class "they flex p-1  text-gray-900", Attributes.style "height" "25%" ]
+            [ div [ Attributes.class "flex-grow hand " ] <|
+                map
+                    (viewTheirCard (model.state == Settling))
+                    model.they.hand
+            , div [ Attributes.class "flex-none playerStats text-gray-600", Attributes.style "font-size" "200%" ]
+                [ div [] [ text <| String.fromInt model.they.health ++ " Life ❤️" ]
+                , div [] [ text <| String.fromInt model.they.sanity ++ " Sanity 🧠" ]
+                , div [] [ text <| String.fromInt model.they.wisdomUsed ++ "/" ++ String.fromInt model.they.wisdom ++ " Wisdom 📖" ]
+                ]
+            ]
+        , div [ Attributes.class "flex p-1 justify-center text-gray-900 summons", Attributes.style "height" "50%" ]
             (map
                 (\mcard ->
                     case mcard of
                         Nothing ->
-                            div [ Attributes.class "imageContainer border-small border-transparent" ]
+                            div [ Attributes.class "imageContainer" ]
                                 [ div []
                                     [ img [ Attributes.src cardBack ] []
                                     ]
                                 ]
 
                         Just card ->
-                            div [ Attributes.class "imageContainer border-small border-transparent" ]
+                            div [ Attributes.class "imageContainer" ]
                                 [ div []
                                     [ img [ Attributes.src card.art ] []
                                     , Html.span [ Attributes.class "text ", Attributes.style "font-size" "200%" ]
@@ -129,7 +130,7 @@ viewBoard model =
                 [ Maybe.map cardDetails model.they.summon, Maybe.map cardDetails model.you.summon ]
             )
         , div [ Attributes.class "you flex p-1  text-gray-900", Attributes.style "height" "25%" ]
-            [ div [ Attributes.class "flex-none playerStats text-gray-600 mr-8 ", Attributes.style "font-size" "200%" ]
+            [ div [ Attributes.class "flex-none playerStats text-gray-600 ", Attributes.style "font-size" "200%" ]
                 [ div [] [ text <| "❤️ Life " ++ String.fromInt model.you.health ]
                 , div [] [ text <| "🧠 Sanity " ++ String.fromInt model.you.sanity ]
                 , div [] [ text <| "📖 Wisdom " ++ String.fromInt model.you.wisdomUsed ++ "/" ++ String.fromInt model.you.wisdom ]
@@ -150,37 +151,40 @@ viewBoard model =
                 ]
             , div [ Attributes.class "flex-grow hand " ] <|
                 List.indexedMap
-                    (\i { card, selected, cost } ->
-                        let
-                            details =
-                                Card.cardDetails card
-                        in
-                        div
-                            [ Attributes.class "imageContainer"
-                            , if model.state == Playing then
-                                Events.on "pointerup" (Decode.succeed <| SelectCard i)
-
-                              else
-                                none
-                            ]
-                            [ div
-                                [ Attributes.class
-                                    (if selected then
-                                        "border-yellow-300 border-opacity-75"
-
-                                     else
-                                        "border-transparent"
-                                    )
-                                ]
-                                [ img [ Attributes.src details.art ] []
-                                , Html.span [ Attributes.class "name" ] [ text <| String.fromInt cost ++ " " ++ details.name ]
-                                , Html.span [ Attributes.class "text" ] (Parser.toVirtualDom (Result.withDefault [ Parser.Comment "String" ] (Parser.run details.text)))
-
-                                -- , Html.span [ Attributes.class "cost" ] [ text <| String.fromInt details.cost ]
-                                ]
-                            ]
-                    )
+                    (viewYourCard (model.state == Playing))
                     model.you.hand
+            ]
+        ]
+
+
+viewYourCard : Bool -> Int -> { card : Card, selected : Bool, cost : Int } -> Html Msg
+viewYourCard playing i { card, selected, cost } =
+    let
+        details =
+            Card.cardDetails card
+    in
+    div
+        [ Attributes.class "imageContainer"
+        , if playing then
+            Events.on "pointerup" (Decode.succeed <| SelectCard i)
+
+          else
+            none
+        ]
+        [ div
+            [ Attributes.class
+                (if selected then
+                    "border-yellow-300 border-opacity-75"
+
+                 else
+                    "border-transparent"
+                )
+            ]
+            [ img [ Attributes.src details.art ] []
+            , Html.span [ Attributes.class "name" ] [ text <| String.fromInt cost ++ " " ++ details.name ]
+            , Html.span [ Attributes.class "text" ] (Parser.toVirtualDom (Result.withDefault [ Parser.Comment "String" ] (Parser.run details.text)))
+
+            -- , Html.span [ Attributes.class "cost" ] [ text <| String.fromInt details.cost ]
             ]
         ]
 
@@ -193,20 +197,27 @@ viewTheirCard settling { card, selected, cost } =
                 Card.cardDetails card
         in
         div
-            [ Attributes.class "imageContainer border-small"
-            , Attributes.class "border-transparent"
-            ]
-            [ div []
+            [ Attributes.class "imageContainer" ]
+            [ div
+                [ Attributes.class
+                    (if selected then
+                        "border-yellow-300 border-opacity-75"
+
+                     else
+                        "border-transparent"
+                    )
+                ]
                 [ img [ Attributes.src details.art ] []
-                , Html.span [ Attributes.class "name" ] [ text details.name ]
+                , Html.span [ Attributes.class "name" ] [ text <| String.fromInt cost ++ " " ++ details.name ]
                 , Html.span [ Attributes.class "text" ] [ text details.text ]
-                , Html.span [ Attributes.class "cost" ] [ text <| String.fromInt cost ]
+
+                -- , Html.span [ Attributes.class "cost" ] [ text <| String.fromInt cost ]
                 ]
             ]
 
     else
-        div [ Attributes.class "imageContainer border-small border-transparent" ]
-            [ div []
+        div [ Attributes.class "imageContainer" ]
+            [ div [ Attributes.class "border-transparent" ]
                 [ img [ Attributes.src cardBack ] []
 
                 -- , Html.span [] [ Html.text "blabla" ]
@@ -331,13 +342,13 @@ settleSchemes ({ you, they } as model) =
                         GainHealth f ->
                             { total | gainHealth = total.gainHealth + f from to }
 
-                        Summon m -> 
-                            { total | summon = Just m}
+                        Summon m ->
+                            { total | summon = Just m }
 
                         _ ->
                             total
                 )
-                { damage = 0, draw = 0, gainWisdom = 0, gainSanity = 0, gainHealth = 0 , summon =  Nothing}
+                { damage = 0, draw = 0, gainWisdom = 0, gainSanity = 0, gainHealth = 0, summon = Nothing }
             <|
                 concatMap .effect scheme
 
@@ -354,7 +365,7 @@ settleSchemes ({ you, they } as model) =
                 , draw = you.draw + yourEffect.draw
                 , wisdom = you.wisdom + yourEffect.gainWisdom
                 , sanity = you.sanity + yourEffect.gainSanity
-                , summon = yourEffect.summon|> orElse you.summon
+                , summon = yourEffect.summon |> orElse you.summon
             }
                 |> playCards
         , they =
@@ -363,7 +374,7 @@ settleSchemes ({ you, they } as model) =
                 , draw = they.draw + theirEffect.draw
                 , wisdom = they.wisdom + theirEffect.gainWisdom
                 , sanity = they.sanity + theirEffect.gainSanity
-                , summon = theirEffect.summon|> orElse they.summon
+                , summon = theirEffect.summon |> orElse they.summon
             }
                 |> playCards
         , state = Playing
@@ -498,9 +509,10 @@ updateCosts ({ hand } as player) =
 
 schemeValid : Player -> Bool
 schemeValid player =
-    player.wisdomUsed <= player.wisdom
-    && 
-    1 >= (length <| (filter (\c-> c.cardType == Types.M)) (getScheme player.hand))
+    player.wisdomUsed
+        <= player.wisdom
+        && 1
+        >= (length <| filter (\c -> c.cardType == Types.M) (getScheme player.hand))
 
 
 subscriptions : Model -> Sub Msg

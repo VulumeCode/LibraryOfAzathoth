@@ -63,6 +63,13 @@ button:focus {
   border-width: 0.25rem;
 }
 
+.summons .imageContainer div {
+ /* background-color: #0000; */
+  border-width: 0.5rem;
+ border-color: #0000;
+}
+
+
 .hand .imageContainer {
   /* height: 25vh;   */
   /* grid-row: 100%; */
@@ -76,7 +83,7 @@ button:focus {
 .you .imageContainer {
   transition: all 0.1s ease-in-out;
 }
-.you .imageContainer:hover {
+.you .imageContainer:hover{
   grid-column: span 5;
   z-index: 999;
   transform: scale(1.5) translateY(-15%);
@@ -153,7 +160,17 @@ button:focus {
   padding-bottom: 0.1em;
   width: 100%; 
 }
+
+
+
 .playerStats div {
   text-shadow: 2px 2px 5px #000000b0;
   height: 25%;
+}
+.you .playerStats {
+  margin-right: 2rem;
+}
+.they .playerStats {
+  margin-left: 4rem;
+  text-align: right;
 }
