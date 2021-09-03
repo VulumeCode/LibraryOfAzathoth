@@ -23,6 +23,7 @@ import Svg.Attributes
 import Task
 import Time
 import Types exposing (..)
+import List exposing (indexedMap)
 
 
 type alias Model =
@@ -150,15 +151,15 @@ viewBoard model =
                     [ text <| "✨ Play scheme" ]
                 ]
             , div [ Attributes.class "flex-grow hand " ] <|
-                List.indexedMap
+                map
                     (viewYourCard (model.state == Playing))
                     model.you.hand
             ]
         ]
 
 
-viewYourCard : Bool -> Int -> { card : Card, selected : Bool, cost : Int } -> Html Msg
-viewYourCard playing i { card, selected, cost } =
+viewYourCard : Bool  -> Held -> Html Msg
+viewYourCard playing { card, selected, cost , index} =
     let
         details =
             Card.cardDetails card
@@ -166,7 +167,7 @@ viewYourCard playing i { card, selected, cost } =
     div
         [ Attributes.class "imageContainer"
         , if playing then
-            Events.on "pointerup" (Decode.succeed <| SelectCard i)
+            Events.on "pointerup" (Decode.succeed <| SelectCard index)
 
           else
             none
@@ -189,7 +190,7 @@ viewYourCard playing i { card, selected, cost } =
         ]
 
 
-viewTheirCard : Bool -> { card : Card, selected : Bool, cost : Int } -> Html Msg
+viewTheirCard : Bool -> { a | card : Card, selected : Bool, cost : Int } -> Html Msg
 viewTheirCard settling { card, selected, cost } =
     if selected && settling then
         let
@@ -318,10 +319,10 @@ settleSchemes : Model -> Model
 settleSchemes ({ you, they } as model) =
     let
         yourScheme =
-            getScheme you.hand
+            map (\c -> cardDetails c.card) <| getScheme you.hand
 
         theirScheme =
-            getScheme they.hand
+            map (\c -> cardDetails c.card) <| getScheme they.hand
 
         getEffect from to scheme =
             foldl
@@ -433,7 +434,7 @@ id x =
 dealHand : Player -> List Card -> Player
 dealHand player cards =
     { player
-        | hand = sortHand <| map (\c -> { card = c, selected = False, cost = (cardDetails c).cost }) <| cards
+        | hand = sortHand <| map (\c -> { card = c, selected = False, cost = (cardDetails c).cost, index = -1 }) <| cards
         , draw = 0
     }
 
@@ -441,23 +442,23 @@ dealHand player cards =
 dealCards : Player -> List Card -> Player
 dealCards ({ hand } as player) cs =
     { player
-        | hand = sortHand <| List.append hand (map (\c -> { card = c, selected = False, cost = (cardDetails c).cost }) cs)
+        | hand = sortHand <| List.append hand (map (\c -> { card = c, selected = False, cost = (cardDetails c).cost, index = -1 }) cs)
         , draw = 0
     }
 
 
-sortHand : List { a | card : Card } -> List { a | card : Card }
+sortHand : List Held -> List Held
 sortHand hand =
-    List.sortBy (\h -> cardDetails h.card |> .cost) <| List.sortBy (\h -> cardDetails h.card |> .name) hand
+    indexedMap (\i c -> { c | index = i}) <| List.sortBy (\h -> cardDetails h.card |> .cost) <| List.sortBy (\h -> cardDetails h.card |> .name) hand
 
 
 selectCard : Player -> Int -> Player
-selectCard ({ hand } as player) j =
+selectCard ({ hand } as player) i =
     { player
         | hand =
-            List.indexedMap
-                (\i c ->
-                    if j == i then
+            List.map
+                (\c ->
+                    if c.index == i then
                         { c | selected = not c.selected }
 
                     else
@@ -469,7 +470,7 @@ selectCard ({ hand } as player) j =
 
 
 getScheme hand =
-    map (\c -> cardDetails c.card) <| List.filter (\held -> held.selected) <| hand
+    List.filter (\held -> held.selected) <| hand
 
 
 updateCosts : Player -> Player
@@ -481,16 +482,16 @@ updateCosts ({ hand } as player) =
         playerScheme =
             getScheme player.hand
 
-        modCosts costMod h =
-            case costMod of
+        modCosts (e_card,e) h =
+            case e of
                 CostMod f ->
-                    map (\held -> { held | cost = held.cost + f player { card = M12, selected = False, cost = 0 } held }) h
+                    map (\held -> { held | cost = held.cost + f player e_card held }) h
 
                 _ ->
                     h
 
         allModCosts h =
-            foldl modCosts h (concatMap .effect playerScheme)
+            foldl modCosts h (concatMap (\e_card -> map (\e -> (e_card ,e )) (cardDetails e_card.card).effect) playerScheme)
 
         clampCosts =
             map (\held -> { held | cost = max 0 held.cost })
@@ -512,7 +513,7 @@ schemeValid player =
     player.wisdomUsed
         <= player.wisdom
         && 1
-        >= (length <| filter (\c -> c.cardType == Types.M) (getScheme player.hand))
+        >= (length <| filter (\c -> (cardDetails c.card).cardType == Types.M) (getScheme player.hand))
 
 
 subscriptions : Model -> Sub Msg

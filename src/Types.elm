@@ -20,6 +20,7 @@ type alias Held =
     { card : Card
     , selected : Bool
     , cost : Int
+    , index : Int
     }
 
 type alias CardDetails =
