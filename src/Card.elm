@@ -127,9 +127,19 @@ cardDetails card =
         W14 ->
             { name = "Visions"
             , cost = 4
-            , text = "Gain 1 sanity."
+            , text = "Other Wand cards cost 3 less to cast.<br>Gain 1 sanity."
             , art = "images/cards/Wands14.jpg"
-            , effect = [ GainSanity (\_ _ -> 1) ]
+            , effect = 
+                [ CostMod
+                    (\_ this other ->
+                        if this /= other && (other.card |> cardDetails |> .cardType) == W then
+                            -3
+
+                        else
+                            0
+                    )
+                , GainSanity (\_ _ -> 1)
+                ]
             , cardType = W
             }
 
@@ -253,9 +263,19 @@ cardDetails card =
         S14 ->
             { name = "Intellect"
             , cost = 4
-            , text = "Deal 2 damage."
+            , text = "Other Sword cards cost 3 less to cast.<br>Deal 1 damage."
             , art = "images/cards/Swords14.jpg"
-            , effect = [ Damage (\_ _ -> 2) ]
+            , effect =
+                [ CostMod
+                    (\_ this other ->
+                        if this /= other && (other.card |> cardDetails |> .cardType) == S then
+                            -3
+
+                        else
+                            0
+                    )
+                , Damage (\_ _ -> 1)
+                ]
             , cardType = S
             }
 
@@ -352,7 +372,7 @@ cardDetails card =
         C11 ->
             { name = "Synchronicity"
             , cost = 3
-            , text = "Other cards in your scheme cost 1 less to cast."
+            , text = "Other cards cost 1 less to cast."
             , art = "images/cards/Cups11.jpg"
             , effect =
                 [ CostMod
@@ -388,14 +408,24 @@ cardDetails card =
         C14 ->
             { name = "Balance"
             , cost = 4
-            , text = "Gain 2 wisdom."
+            , text = "Other Cup cards cost 3 less to cast.<br>Gain 1 wisdom."
             , art = "images/cards/Cups14.jpg"
-            , effect = [ GainWisdom (\_ _ -> 2) ]
+            , effect =
+                [ CostMod
+                    (\_ this other ->
+                        if this /= other && (other.card |> cardDetails |> .cardType) == C then
+                            -3
+
+                        else
+                            0
+                    )
+                , GainWisdom (\_ _ -> 1)
+                ]
             , cardType = C
             }
 
         P1 ->
-            { name = "Intuition"
+            { name = "Manifestation"
             , cost = 1
             , text = "Gain 1 life. Draw a card."
             , art = "images/cards/Pents01.jpg"
@@ -404,7 +434,7 @@ cardDetails card =
             }
 
         P2 ->
-            { name = "Connection"
+            { name = "Adapt"
             , cost = 1
             , text = "Gain 2 life."
             , art = "images/cards/Pents02.jpg"
@@ -413,7 +443,7 @@ cardDetails card =
             }
 
         P3 ->
-            { name = "Overflow"
+            { name = "Collaborate"
             , cost = 1
             , text = "Gain 2 life."
             , art = "images/cards/Pents03.jpg"
@@ -422,7 +452,7 @@ cardDetails card =
             }
 
         P4 ->
-            { name = "Apathy"
+            { name = "Security"
             , cost = 1
             , text = "Gain 2 life."
             , art = "images/cards/Pents04.jpg"
@@ -431,7 +461,7 @@ cardDetails card =
             }
 
         P5 ->
-            { name = "Regret"
+            { name = "Poverty"
             , cost = 2
             , text = "Gain 2 life."
             , art = "images/cards/Pents05.jpg"
@@ -440,16 +470,16 @@ cardDetails card =
             }
 
         P6 ->
-            { name = "Innocence"
+            { name = "Generosity"
             , cost = 2
-            , text = "Gain 2 life for every card in your scheme.<hr><i>Baboom!</i>"
+            , text = "Gain 2 life for every card in your scheme.<hr><i>A momentary abatement...</i>"
             , art = "images/cards/Pents06.jpg"
             , effect = [ GainHealth (\you _ -> 2 * (List.length <| List.filter .selected you.hand)) ]
             , cardType = P
             }
 
         P7 ->
-            { name = "Wishful Thinking"
+            { name = "Profit"
             , cost = 2
             , text = "Gain 2 life."
             , art = "images/cards/Pents07.jpg"
@@ -458,7 +488,7 @@ cardDetails card =
             }
 
         P8 ->
-            { name = "Weariness"
+            { name = "Education"
             , cost = 2
             , text = "Gain 2 life for every card in their scheme."
             , art = "images/cards/Pents08.jpg"
@@ -467,7 +497,7 @@ cardDetails card =
             }
 
         P9 ->
-            { name = "Wish Fulfillment"
+            { name = "Gratitude"
             , cost = 2
             , text = "Gain 3 life."
             , art = "images/cards/Pents09.jpg"
@@ -476,7 +506,7 @@ cardDetails card =
             }
 
         P10 ->
-            { name = "Alignment"
+            { name = "Wealth"
             , cost = 3
             , text = "Gain 2 life."
             , art = "images/cards/Pents10.jpg"
@@ -485,7 +515,7 @@ cardDetails card =
             }
 
         P11 ->
-            { name = "Synchronicity"
+            { name = "Enterprise"
             , cost = 3
             , text = "Gain 2 life."
             , art = "images/cards/Pents11.jpg"
@@ -494,7 +524,7 @@ cardDetails card =
             }
 
         P12 ->
-            { name = "Charm"
+            { name = "Habit"
             , cost = 3
             , text = "Gain 2 life."
             , art = "images/cards/Pents12.jpg"
@@ -503,7 +533,7 @@ cardDetails card =
             }
 
         P13 ->
-            { name = "Compassion"
+            { name = "Abundance"
             , cost = 4
             , text = "Gain 2 life."
             , art = "images/cards/Pents13.jpg"
@@ -512,11 +542,21 @@ cardDetails card =
             }
 
         P14 ->
-            { name = "Balance"
+            { name = "Discipline"
             , cost = 4
-            , text = "Gain 2 life."
+            , text = "Other Sigil cards cost 3 less to cast.<br>Gain 1 wisdom."
             , art = "images/cards/Pents14.jpg"
-            , effect = [ GainHealth (\_ _ -> 2) ]
+            , effect =
+                [ CostMod
+                    (\_ this other ->
+                        if this /= other && (other.card |> cardDetails |> .cardType) == P then
+                            -3
+
+                        else
+                            0
+                    )
+                , GainSanity (\_ _ -> 1)
+                ]
             , cardType = P
             }
 
