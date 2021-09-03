@@ -55,9 +55,9 @@ cardDetails card =
         W6 ->
             { name = "Pride"
             , cost = 2
-            , text = "Gain 1 sanity."
+            , text = "Gain 2 sanity for every card in your scheme."
             , art = "images/cards/Wands06.jpg"
-            , effect = [ GainSanity (\_ _ -> 1) ]
+            , effect = [ GainSanity (\you _ -> 2 * (List.length <| List.filter .selected you.hand)) ]
             , cardType = W
             }
 
@@ -73,9 +73,9 @@ cardDetails card =
         W8 ->
             { name = "Change"
             , cost = 2
-            , text = "Gain 1 sanity."
+            , text = "Gain 2 sanity for every card in your opponent's scheme."
             , art = "images/cards/Wands08.jpg"
-            , effect = [ GainSanity (\_ _ -> 1) ]
+            , effect = [ GainSanity  (\_ they -> 2 * (List.length <| List.filter .selected they.hand))]
             , cardType = W
             }
 
@@ -209,7 +209,7 @@ cardDetails card =
         S8 ->
             { name = "Confusion"
             , cost = 2
-            , text = "Deal 2 damage for every card in their scheme."
+            , text = "Deal 2 damage for every card in your opponent's scheme."
             , art = "images/cards/Swords08.jpg"
             , effect = [ Damage (\_ they -> 2 * (List.length <| List.filter .selected they.hand)) ]
             , cardType = S
@@ -345,7 +345,7 @@ cardDetails card =
         C8 ->
             { name = "Weariness"
             , cost = 2
-            , text = "Gain 2 wisdom for every card in their scheme."
+            , text = "Gain 2 wisdom for every card in your opponent's scheme."
             , art = "images/cards/Cups08.jpg"
             , effect = [ GainWisdom (\_ they -> 2 * (List.length <| List.filter .selected they.hand)) ]
             , cardType = C
@@ -490,7 +490,7 @@ cardDetails card =
         P8 ->
             { name = "Education"
             , cost = 2
-            , text = "Gain 2 life for every card in their scheme."
+            , text = "Gain 2 life for every card in your opponent's scheme."
             , art = "images/cards/Pents08.jpg"
             , effect = [ GainHealth (\_ they -> 2 * (List.length <| List.filter .selected they.hand)) ]
             , cardType = P
