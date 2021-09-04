@@ -95,7 +95,14 @@ button:focus {
   display: block;
   max-width: none;
   height: 100%;
+  
+  border-radius: 1em;
 }
+
+.hand .imageContainer img {
+  border-radius: 0.5em;
+}
+
 .imageContainer img.insane   {
   transform: rotate(-180deg);
 }

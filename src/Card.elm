@@ -481,9 +481,9 @@ cardDetails card =
         P7 ->
             { name = "Profit"
             , cost = 2
-            , text = "Gain 2 life."
+            , text = "Gain life equal to your wisdom."
             , art = "images/cards/Pents07.jpg"
-            , effect = [ GainHealth (\_ _ -> 2) ]
+            , effect = [ GainHealth (\you _ -> you.wisdom) ]
             , cardType = P
             }
 
@@ -597,7 +597,7 @@ cardDetails card =
             }
 
         M4 ->
-            { name = "The Emperor"
+            { name = "Cthulhu Sleeping"
             , cost = 4
             , text = "Summon ~."
             , art = "images/cards/RWS_Tarot_04_Emperor.jpg"
@@ -606,7 +606,7 @@ cardDetails card =
             }
 
         M5 ->
-            { name = "The Hierophant"
+            { name = "Nyarlathotep"
             , cost = 4
             , text = "Summon ~."
             , art = "images/cards/RWS_Tarot_05_Hierophant.jpg"
@@ -723,7 +723,7 @@ cardDetails card =
             }
 
         M18 ->
-            { name = "The Moon"
+            { name = "Gibbous Moon"
             , cost = 4
             , text = "Summon ~."
             , art = "images/cards/RWS_Tarot_18_Moon.jpg"
