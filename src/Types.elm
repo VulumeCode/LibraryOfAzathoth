@@ -1,7 +1,5 @@
 module Types exposing (..)
-
-
-
+import Html exposing (Html)
 
 
 type alias Player =
@@ -32,8 +30,23 @@ type alias CardDetails =
     , cardType : CardType
     }
 
+
+type alias SummonDetails msg =
+    { influence : Int
+    , effects : List (SummonEffect msg)
+    }
+
+type alias SummonEffect msg =
+    { cost  : Int
+    , effects : List Effect
+    , text : Html msg
+    , selected : Bool
+    }
+
+
 type Effect
     = Damage (Player -> Player -> Int)
+    | Discard (Player -> Player -> Int)
     | Draw (Player -> Player -> Int)
     | GainWisdom (Player -> Player -> Int)
     | GainSanity (Player -> Player -> Int)
@@ -44,7 +57,12 @@ type Effect
 
 
 type CardType
-    = W | S | C | P | M 
+    = W
+    | S
+    | C
+    | P
+    | M
+
 
 type Card
     = W1

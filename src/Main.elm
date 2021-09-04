@@ -6,24 +6,24 @@ import Card exposing (..)
 import Dict
 import Extras.Html.Attributes exposing (none)
 import Html exposing (Html, button, div, img, text)
-import Html.Attributes as Attributes exposing (selected)
+import Html.Attributes as Attributes exposing (class, style)
 import Html.Events as Events
 import Html.Parser as Parser
 import Html.Parser.Util as Parser
 import Json.Decode as Decode exposing (Value)
-import List exposing (concatMap, filter, foldl, length, map)
+import List exposing (concatMap, filter, foldl, indexedMap, length, map)
 import List.Extra exposing (..)
 import Maybe.Extra as Maybe exposing (orElse)
 import Process
 import Random
 import Set
 import Storage exposing (Storage)
+import Summon exposing (..)
 import Svg exposing (Svg)
 import Svg.Attributes
 import Task
 import Time
 import Types exposing (..)
-import List exposing (indexedMap)
 
 
 type alias Model =
@@ -47,7 +47,7 @@ initPlayer =
     , sanity = 20
     , wisdom = 4
     , wisdomUsed = 0
-    , summon = Nothing
+    , summon = Just M1
     , dead = False
     , draw = 0
     }
@@ -76,6 +76,9 @@ init _ =
 
 -- VIEW
 
+classIf cond a = if cond then class a else none  
+
+ifElse cond a b = if cond then a else b 
 
 view : Model -> Document Msg
 view model =
@@ -86,58 +89,35 @@ view model =
 
 viewRoot : Model -> Html Msg
 viewRoot model =
-    div [ Attributes.class "flex justify-center h-full items-center select-none font-display relative" ]
+    div [ class "flex justify-center h-full items-center select-none font-display relative" ]
         [ viewBoard model
         ]
 
 
 viewBoard : Model -> Html Msg
 viewBoard model =
-    div [ Attributes.class "h-full w-3/4 max-h-screen relative " ]
-        [ div [ Attributes.class "they flex p-1  text-gray-900", Attributes.style "height" "25%" ]
-            [ div [ Attributes.class "flex-grow hand " ] <|
+    div [ class "h-full w-3/4 max-h-screen relative " ]
+        [ div [ class "they flex p-1  text-gray-900", style "height" "25%" ]
+            [ div [ class "flex-grow hand " ] <|
                 map
                     (viewTheirCard (model.state == Settling))
                     model.they.hand
-            , div [ Attributes.class "flex-none playerStats text-gray-600", Attributes.style "font-size" "200%" ]
+            , div [ class "flex-none playerStats text-gray-600", style "font-size" "200%" ]
                 [ div [] [ text <| String.fromInt model.they.health ++ " Life ❤️" ]
                 , div [] [ text <| String.fromInt model.they.sanity ++ " Sanity 🧠" ]
                 , div [] [ text <| String.fromInt model.they.wisdomUsed ++ "/" ++ String.fromInt model.they.wisdom ++ " Wisdom 📖" ]
                 ]
             ]
-        , div [ Attributes.class "flex p-1 justify-center text-gray-900 summons", Attributes.style "height" "50%" ]
-            (map
-                (\mcard ->
-                    case mcard of
-                        Nothing ->
-                            div [ Attributes.class "imageContainer" ]
-                                [ div []
-                                    [ img [ Attributes.src cardBack ] []
-                                    ]
-                                ]
-
-                        Just card ->
-                            div [ Attributes.class "imageContainer" ]
-                                [ div []
-                                    [ img [ Attributes.src card.art ] []
-                                    , Html.span [ Attributes.class "text ", Attributes.style "font-size" "200%" ]
-                                        [ button [ Attributes.class "block" ] [ text "+1: Stab" ]
-                                        , button [ Attributes.class "block" ] [ text "0: Learn" ]
-                                        , button [ Attributes.class "block" ] [ text "-5: Kill" ]
-                                        ]
-                                    ]
-                                ]
-                )
-                [ Maybe.map cardDetails model.they.summon, Maybe.map cardDetails model.you.summon ]
-            )
-        , div [ Attributes.class "you flex p-1  text-gray-900", Attributes.style "height" "25%" ]
-            [ div [ Attributes.class "flex-none playerStats text-gray-600 ", Attributes.style "font-size" "200%" ]
+        , div [ class "flex p-1 justify-center text-gray-900 summons", style "height" "50%" ]
+            [ viewSummon model.they.summon, viewSummon model.you.summon ]
+        , div [ class "you flex p-1  text-gray-900", style "height" "25%" ]
+            [ div [ class "flex-none playerStats text-gray-600 ", style "font-size" "200%" ]
                 [ div [] [ text <| "❤️ Life " ++ String.fromInt model.you.health ]
                 , div [] [ text <| "🧠 Sanity " ++ String.fromInt model.you.sanity ]
                 , div [] [ text <| "📖 Wisdom " ++ String.fromInt model.you.wisdomUsed ++ "/" ++ String.fromInt model.you.wisdom ]
                 , div
                     (if schemeValid model.you then
-                        [ Attributes.class "text-blue-600 hover:text-blue-300"
+                        [ class "text-blue-600 hover:text-blue-300"
                         , if model.state == Playing then
                             Events.on "pointerup" (Decode.succeed <| SubmitScheme)
 
@@ -146,11 +126,11 @@ viewBoard model =
                         ]
 
                      else
-                        [ Attributes.class "text-red-600" ]
+                        [ class "text-red-600" ]
                     )
                     [ text <| "✨ Play scheme" ]
                 ]
-            , div [ Attributes.class "flex-grow hand " ] <|
+            , div [ class "flex-grow hand " ] <|
                 map
                     (viewYourCard (model.state == Playing))
                     model.you.hand
@@ -158,14 +138,46 @@ viewBoard model =
         ]
 
 
-viewYourCard : Bool  -> Held -> Html Msg
-viewYourCard playing { card, selected, cost , index} =
+viewSummon : Maybe Card -> Html Msg
+viewSummon summon =
+    case summon of
+        Nothing ->
+            div [ class "imageContainer" ]
+                [ div []
+                    [ img [ Attributes.src cardBack ] []
+                    ]
+                ]
+
+        Just card ->
+            let
+                cdetails =
+                    cardDetails card
+
+                sdetails =
+                    summonDetails card
+            in
+            div [ class "imageContainer" ]
+                [ div []
+                    [ img [ Attributes.src cdetails.art ] []
+                    , Html.span [ class "name" , style "font-size" "200%"] [ text <| cdetails.name  ]
+                    , Html.span [ class "text", style "font-size" "125%" ]
+                        ((text <| cdetails.text ) :: 
+                            map (\e -> button [ class "summonEffect", classIf e.selected "selected" ] [ viewSummonEffectCost e.cost , e.text]) sdetails.effects
+                        )
+                    ]
+                ]
+
+viewSummonEffectCost cost =
+    Html.span [class "summonEffectCost"] [text <| ((ifElse (cost > 0) "+" "") ++ String.fromInt cost ++ "")]
+
+viewYourCard : Bool -> Held -> Html Msg
+viewYourCard playing { card, selected, cost, index } =
     let
         details =
             Card.cardDetails card
     in
     div
-        [ Attributes.class "imageContainer"
+        [ class "imageContainer"
         , if playing then
             Events.on "pointerup" (Decode.succeed <| SelectCard index)
 
@@ -173,7 +185,7 @@ viewYourCard playing { card, selected, cost , index} =
             none
         ]
         [ div
-            [ Attributes.class
+            [ class
                 (if selected then
                     "border-yellow-300 border-opacity-75"
 
@@ -182,10 +194,10 @@ viewYourCard playing { card, selected, cost , index} =
                 )
             ]
             [ img [ Attributes.src details.art ] []
-            , Html.span [ Attributes.class "name" ] [ text <| String.fromInt cost ++ " " ++ details.name ]
-            , Html.span [ Attributes.class "text" ] (Parser.toVirtualDom (Result.withDefault [ Parser.Comment "String" ] (Parser.run details.text)))
+            , Html.span [ class "name" ] [ text <| String.fromInt cost ++ " " ++ details.name ]
+            , Html.span [ class "text" ] (Parser.toVirtualDom (Result.withDefault [ Parser.Comment "String" ] (Parser.run details.text)))
 
-            -- , Html.span [ Attributes.class "cost" ] [ text <| String.fromInt details.cost ]
+            -- , Html.span [ class "cost" ] [ text <| String.fromInt details.cost ]
             ]
         ]
 
@@ -198,9 +210,9 @@ viewTheirCard settling { card, selected, cost } =
                 Card.cardDetails card
         in
         div
-            [ Attributes.class "imageContainer" ]
+            [ class "imageContainer" ]
             [ div
-                [ Attributes.class
+                [ class
                     (if selected then
                         "border-yellow-300 border-opacity-75"
 
@@ -209,16 +221,16 @@ viewTheirCard settling { card, selected, cost } =
                     )
                 ]
                 [ img [ Attributes.src details.art ] []
-                , Html.span [ Attributes.class "name" ] [ text <| String.fromInt cost ++ " " ++ details.name ]
-                , Html.span [ Attributes.class "text" ] [ text details.text ]
+                , Html.span [ class "name" ] [ text <| String.fromInt cost ++ " " ++ details.name ]
+                , Html.span [ class "text" ] [ text details.text ]
 
-                -- , Html.span [ Attributes.class "cost" ] [ text <| String.fromInt cost ]
+                -- , Html.span [ class "cost" ] [ text <| String.fromInt cost ]
                 ]
             ]
 
     else
-        div [ Attributes.class "imageContainer" ]
-            [ div [ Attributes.class "border-transparent" ]
+        div [ class "imageContainer" ]
+            [ div [ class "border-transparent" ]
                 [ img [ Attributes.src cardBack ] []
 
                 -- , Html.span [] [ Html.text "blabla" ]
@@ -261,7 +273,7 @@ update msg ({ you, they } as model) =
 
         SubmitScheme ->
             ( { model | state = Settling } |> randomAI
-            , Process.sleep 200
+            , Process.sleep 2000
                 |> Task.perform (\_ -> SettleSchemes)
             )
 
@@ -449,7 +461,7 @@ dealCards ({ hand } as player) cs =
 
 sortHand : List Held -> List Held
 sortHand hand =
-    indexedMap (\i c -> { c | index = i}) <| List.sortBy (\h -> cardDetails h.card |> .cost) <| List.sortBy (\h -> cardDetails h.card |> .name) hand
+    indexedMap (\i c -> { c | index = i }) <| List.sortBy (\h -> cardDetails h.card |> .cost) <| List.sortBy (\h -> cardDetails h.card |> .name) hand
 
 
 selectCard : Player -> Int -> Player
@@ -482,7 +494,7 @@ updateCosts ({ hand } as player) =
         playerScheme =
             getScheme player.hand
 
-        modCosts (e_card,e) h =
+        modCosts ( e_card, e ) h =
             case e of
                 CostMod f ->
                     map (\held -> { held | cost = held.cost + f player e_card held }) h
@@ -491,7 +503,7 @@ updateCosts ({ hand } as player) =
                     h
 
         allModCosts h =
-            foldl modCosts h (concatMap (\e_card -> map (\e -> (e_card ,e )) (cardDetails e_card.card).effect) playerScheme)
+            foldl modCosts h (concatMap (\e_card -> map (\e -> ( e_card, e )) (cardDetails e_card.card).effect) playerScheme)
 
         clampCosts =
             map (\held -> { held | cost = max 0 held.cost })

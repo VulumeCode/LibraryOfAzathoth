@@ -61,12 +61,14 @@ button:focus {
 
 .imageContainer div{
   border-width: 0.25rem;
+  display: flex;
+  justify-content: center;
 }
 
 .summons .imageContainer div {
  /* background-color: #0000; */
   border-width: 0.5rem;
- border-color: #0000;
+  border-color: #0000;
 }
 
 
@@ -113,7 +115,6 @@ button:focus {
 
 .imageContainer div {
   position: relative;
-  display: inline-block;
   height: 100%;
 }
 .imageContainer span.name  {
@@ -122,8 +123,8 @@ button:focus {
   text-align: center;
   /* color: #000; */
   position: absolute;
-  left: 0.5em;
-  right: 0.5em;
+  /* left: 0.5em;
+  right: 0.5em; */
   top: 0.5em;
 
   /* padding: 10%; */
@@ -131,6 +132,10 @@ button:focus {
   background: #f5e7caD0;
   /* background: rgb(217, 119, 6);
   background: linear-gradient(0deg, rgba(217, 119, 6,1) 50%, rgba(217, 119, 6,0) 100%);  */
+
+  width: fit-content;
+  width: -moz-fit-content;
+  padding: 0 0.4em;
 }
 .imageContainer span.text  {
   font-family: 'Kurale', 'Jost', 'Comic Sans MS', 'Calibri';
@@ -142,13 +147,16 @@ button:focus {
   text-align: left;
   /* color: #000; */
   position: absolute;
-  left: 0.2em;
-  right: 0.2em;
+  /* left: 0.2em;
+  right: 0.2em; */
   bottom: 0.2em;
-  padding: 10%;
   /* width: 100%;  */
   background: #f5e7caD0;
   /* background: linear-gradient(0deg, #f5e7caFF 50%, #f5e7ca00 100%);  */
+  
+  width: fit-content;
+  width: -moz-fit-content;
+  padding: 0 0.4em;
 }
 
 .imageContainer span.text  hr {
@@ -180,4 +188,24 @@ button:focus {
 .they .playerStats {
   margin-left: 4rem;
   text-align: right;
+}
+.summonEffect.selected {
+  color: rgb(49, 130, 206);
+  font-weight: bold;
+}
+.summonEffect {
+  display: block;
+  text-align: left;
+  margin-top: 1ex;
+}
+
+.summonEffectCost {
+  display: inline-block;
+  margin-right: 0.2em;
+  width: 1.2em;
+  text-align: right;
+  font-weight: bold;
+
+  font-size: 1.6em;
+  vertical-align: bottom;
 }
