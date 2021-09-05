@@ -1,11 +1,22 @@
 module Summon exposing (..)
 
+import Card
 import Debug
 import Html exposing (Html, button, div, img, text)
 import Html.Attributes as Attributes
 import Html.Events as Events
 import Json.Decode as Decode exposing (Value)
 import Types exposing (..)
+
+
+getSummonDetails : Card -> Maybe SummonDetails
+getSummonDetails card =
+    case card |> Card.cardDetails |> .cardType of
+        M ->
+            Just <| summonDetails card
+
+        _ ->
+            Nothing
 
 
 summonDetails : Card -> SummonDetails

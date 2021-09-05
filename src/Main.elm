@@ -177,19 +177,23 @@ viewSummon interactive revealed summon =
                     , Html.span [ class "name", style "font-size" "200%" ] [ text <| cdetails.name, Html.br [] [], text <| String.fromInt influence ]
                     , Html.span [ class "text", style "font-size" "125%" ]
                         ((text <| cdetails.text)
-                            :: indexedMap
-                                (\i e ->
-                                    button
-                                        [ class "summonEffect"
-                                        , classIf (e.selected && revealed) "selected"
-                                        , ifElse interactive (onClick (SelectEffect i)) none
-                                        ]
-                                        [ viewSummonEffectCost e.cost, static e.text ]
-                                )
-                                effects
+                            :: viewSummonEffects interactive revealed effects
                         )
                     ]
                 ]
+
+
+viewSummonEffects interactive revealed effects =
+    indexedMap
+        (\i e ->
+            button
+                [ class "summonEffect"
+                , classIf (e.selected && revealed) "selected"
+                , ifElse interactive (onClick (SelectEffect i)) none
+                ]
+                [ viewSummonEffectCost e.cost, static e.text ]
+        )
+        effects
 
 
 viewSummonEffectCost cost =
@@ -220,8 +224,26 @@ viewYourCard playing { card, selected, cost, index } =
                 )
             ]
             [ img [ Attributes.src details.art ] []
-            , Html.span [ class "name" ] [ text <| String.fromInt cost ++ " " ++ details.name ]
-            , Html.span [ class "text" ] (Parser.toVirtualDom (Result.withDefault [ Parser.Comment "String" ] (Parser.run details.text)))
+            , Html.span [ class "name" ]
+                (( text <| String.fromInt cost ++ " " ++ details.name )
+                    :: (Maybe.map
+                            (\sd ->
+                                [ Html.br [] [], text <| String.fromInt sd.influence ]
+                            )
+                            (getSummonDetails card)
+                            |> Maybe.withDefault []
+                       )
+                )
+            , Html.span [ class "text" ]
+                (Parser.toVirtualDom (Result.withDefault [ Parser.Comment "String" ] (Parser.run details.text))
+                    ++ (Maybe.map
+                            (\sd ->
+                                viewSummonEffects False False sd.effects
+                            )
+                            (getSummonDetails card)
+                            |> Maybe.withDefault []
+                       )
+                )
 
             -- , Html.span [ class "cost" ] [ text <| String.fromInt details.cost ]
             ]

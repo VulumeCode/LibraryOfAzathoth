@@ -118,7 +118,7 @@ button:focus {
   height: 100%;
 }
 .imageContainer span.name  {
-  font-size: 14pt;
+  font-size: 0.9em;
 
   text-align: center;
   /* color: #000; */
@@ -139,7 +139,7 @@ button:focus {
 }
 .imageContainer span.text  {
   font-family: 'Kurale', 'Jost', 'Comic Sans MS', 'Calibri';
-  font-weight: 600;
+  /* font-weight: 600; */
   font-size: 10px;
   line-height: 0.9em;
 
