@@ -191,7 +191,6 @@ button:focus {
 }
 .summonEffect.selected {
   color: rgb(49, 130, 206);
-  font-weight: bold;
 }
 .summonEffect {
   display: block;
@@ -200,10 +199,11 @@ button:focus {
 }
 
 .summonEffectCost {
+  font-family: 'Walzhari';
   display: inline-block;
   margin-right: 0.2em;
   width: 1.2em;
-  text-align: right;
+  text-align: center;
   font-weight: bold;
 
   font-size: 1.6em;

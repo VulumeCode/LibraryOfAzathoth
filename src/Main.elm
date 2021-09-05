@@ -7,7 +7,8 @@ import Dict
 import Extras.Html.Attributes exposing (none)
 import Html exposing (Html, button, div, img, text)
 import Html.Attributes as Attributes exposing (class, style)
-import Html.Events as Events
+import Html.Events as Events exposing (on, onClick)
+import Html.Extra as Html exposing (static)
 import Html.Parser as Parser
 import Html.Parser.Util as Parser
 import Json.Decode as Decode exposing (Value)
@@ -47,7 +48,7 @@ initPlayer =
     , sanity = 20
     , wisdom = 4
     , wisdomUsed = 0
-    , summon = Just M1
+    , summon = Just (summonDetails M1)
     , dead = False
     , draw = 0
     }
@@ -76,9 +77,22 @@ init _ =
 
 -- VIEW
 
-classIf cond a = if cond then class a else none  
 
-ifElse cond a b = if cond then a else b 
+classIf cond a =
+    if cond then
+        class a
+
+    else
+        none
+
+
+ifElse cond a b =
+    if cond then
+        a
+
+    else
+        b
+
 
 view : Model -> Document Msg
 view model =
@@ -96,11 +110,15 @@ viewRoot model =
 
 viewBoard : Model -> Html Msg
 viewBoard model =
+    let
+        revealThey =
+            model.state == Settling
+    in
     div [ class "h-full w-3/4 max-h-screen relative " ]
         [ div [ class "they flex p-1  text-gray-900", style "height" "25%" ]
             [ div [ class "flex-grow hand " ] <|
                 map
-                    (viewTheirCard (model.state == Settling))
+                    (viewTheirCard revealThey)
                     model.they.hand
             , div [ class "flex-none playerStats text-gray-600", style "font-size" "200%" ]
                 [ div [] [ text <| String.fromInt model.they.health ++ " Life ❤️" ]
@@ -109,7 +127,7 @@ viewBoard model =
                 ]
             ]
         , div [ class "flex p-1 justify-center text-gray-900 summons", style "height" "50%" ]
-            [ viewSummon model.they.summon, viewSummon model.you.summon ]
+            [ viewSummon False revealThey model.they.summon, viewSummon True True model.you.summon ]
         , div [ class "you flex p-1  text-gray-900", style "height" "25%" ]
             [ div [ class "flex-none playerStats text-gray-600 ", style "font-size" "200%" ]
                 [ div [] [ text <| "❤️ Life " ++ String.fromInt model.you.health ]
@@ -119,7 +137,7 @@ viewBoard model =
                     (if schemeValid model.you then
                         [ class "text-blue-600 hover:text-blue-300"
                         , if model.state == Playing then
-                            Events.on "pointerup" (Decode.succeed <| SubmitScheme)
+                            on "pointerup" (Decode.succeed <| SubmitScheme)
 
                           else
                             none
@@ -138,8 +156,8 @@ viewBoard model =
         ]
 
 
-viewSummon : Maybe Card -> Html Msg
-viewSummon summon =
+viewSummon : Bool -> Bool -> Maybe SummonDetails -> Html Msg
+viewSummon interactive revealed summon =
     case summon of
         Nothing ->
             div [ class "imageContainer" ]
@@ -148,27 +166,35 @@ viewSummon summon =
                     ]
                 ]
 
-        Just card ->
+        Just { card, influence, effects } ->
             let
                 cdetails =
                     cardDetails card
-
-                sdetails =
-                    summonDetails card
             in
             div [ class "imageContainer" ]
                 [ div []
                     [ img [ Attributes.src cdetails.art ] []
-                    , Html.span [ class "name" , style "font-size" "200%"] [ text <| cdetails.name  ]
+                    , Html.span [ class "name", style "font-size" "200%" ] [ text <| cdetails.name, Html.br [] [], text <| String.fromInt influence ]
                     , Html.span [ class "text", style "font-size" "125%" ]
-                        ((text <| cdetails.text ) :: 
-                            map (\e -> button [ class "summonEffect", classIf e.selected "selected" ] [ viewSummonEffectCost e.cost , e.text]) sdetails.effects
+                        ((text <| cdetails.text)
+                            :: indexedMap
+                                (\i e ->
+                                    button
+                                        [ class "summonEffect"
+                                        , classIf (e.selected && revealed) "selected"
+                                        , ifElse interactive (onClick (SelectEffect i)) none
+                                        ]
+                                        [ viewSummonEffectCost e.cost, static e.text ]
+                                )
+                                effects
                         )
                     ]
                 ]
 
+
 viewSummonEffectCost cost =
-    Html.span [class "summonEffectCost"] [text <| ((ifElse (cost > 0) "+" "") ++ String.fromInt cost ++ "")]
+    Html.span [ class "summonEffectCost" ] [ text <| (ifElse (cost > 0) "+" "" ++ String.fromInt cost) ]
+
 
 viewYourCard : Bool -> Held -> Html Msg
 viewYourCard playing { card, selected, cost, index } =
@@ -179,7 +205,7 @@ viewYourCard playing { card, selected, cost, index } =
     div
         [ class "imageContainer"
         , if playing then
-            Events.on "pointerup" (Decode.succeed <| SelectCard index)
+            on "pointerup" (Decode.succeed <| SelectCard index)
 
           else
             none
@@ -245,6 +271,7 @@ viewTheirCard settling { card, selected, cost } =
 type Msg
     = Restart
     | SelectCard Int
+    | SelectEffect Int
     | SubmitScheme
     | SettleSchemes
     | DealYouHand (List Card)
@@ -258,6 +285,11 @@ update msg ({ you, they } as model) =
     case msg of
         SelectCard card ->
             ( { model | you = selectCard you card }
+            , Cmd.none
+            )
+
+        SelectEffect i ->
+            ( { model | you = selectEffect you i }
             , Cmd.none
             )
 
@@ -356,7 +388,7 @@ settleSchemes ({ you, they } as model) =
                             { total | gainHealth = total.gainHealth + f from to }
 
                         Summon m ->
-                            { total | summon = Just m }
+                            { total | summon = Just (summonDetails m) }
 
                         _ ->
                             total
@@ -479,6 +511,22 @@ selectCard ({ hand } as player) i =
                 hand
     }
         |> updateCosts
+
+
+selectEffect : Player -> Int -> Player
+selectEffect ({ summon } as player) selected =
+    case summon of
+        Nothing ->
+            player
+
+        Just ({ influence, effects } as jsummon) ->
+            { player
+                | summon =
+                    Just
+                        { jsummon
+                            | effects = indexedMap (\i e -> { e | selected = i == selected }) effects
+                        }
+            }
 
 
 getScheme hand =

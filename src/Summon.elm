@@ -8,21 +8,23 @@ import Json.Decode as Decode exposing (Value)
 import Types exposing (..)
 
 
-summonDetails : Card -> SummonDetails msg
+summonDetails : Card -> SummonDetails
 summonDetails card =
     case card of
         M0 ->
             { -- "The Fool"
-              influence = 5
-            , effects = [ SummonEffect -1 ([GainSanity (\_ _ -> 1)]) (text "Gain 1 sanity.") True ]
+              card = card
+            , influence = 5
+            , effects = [ SummonEffect -1 [ GainSanity (\_ _ -> 1) ] (text "Gain 1 sanity.") True ]
             }
 
         M1 ->
             { -- "The Magician"
-              influence = 3
+              card = card
+            , influence = 3
             , effects =
-                [ SummonEffect 1 ([Draw (\_ _ -> 1)]) (text "Draw a card.") False
-                , SummonEffect -2 ([Discard (\_ _ -> 1)]) (text "Opponent discards a card.") True
+                [ SummonEffect 1 [ Draw (\_ _ -> 1) ] (text "Draw a card.") False
+                , SummonEffect -2 [ Discard (\_ _ -> 1) ] (text "Opponent discards a card.") True
                 ]
             }
 

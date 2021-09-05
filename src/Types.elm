@@ -8,7 +8,7 @@ type alias Player =
     , sanity : Int
     , wisdom : Int
     , wisdomUsed : Int
-    , summon : Maybe Card
+    , summon : Maybe SummonDetails
     , dead : Bool
     , draw : Int
     }
@@ -31,15 +31,16 @@ type alias CardDetails =
     }
 
 
-type alias SummonDetails msg =
+type alias SummonDetails =
     { influence : Int
-    , effects : List (SummonEffect msg)
+    , effects : List SummonEffect
+    , card : Card
     }
 
-type alias SummonEffect msg =
+type alias SummonEffect =
     { cost  : Int
     , effects : List Effect
-    , text : Html msg
+    , text : Html Never
     , selected : Bool
     }
 
