@@ -86,6 +86,14 @@ classIf cond a =
         none
 
 
+attrIf cond a =
+    if cond then
+        a
+
+    else
+        none
+
+
 ifElse cond a b =
     if cond then
         a
@@ -113,6 +121,12 @@ viewBoard model =
     let
         revealThey =
             model.state == Settling
+
+        playing =
+            model.state == Playing
+
+        predicted =
+            playCards model.you
     in
     div [ class "h-full w-3/4 max-h-screen relative " ]
         [ div [ class "they flex p-1  text-gray-900", style "height" "25%" ]
@@ -130,23 +144,18 @@ viewBoard model =
             [ viewSummon False revealThey model.they.summon, viewSummon True True model.you.summon ]
         , div [ class "you flex p-1  text-gray-900", style "height" "25%" ]
             [ div [ class "flex-none playerStats text-gray-600 ", style "font-size" "200%" ]
-                [ div [] [ text <| "❤️ Life " ++ String.fromInt model.you.health ]
-                , div [] [ text <| "🧠 Sanity " ++ String.fromInt model.you.sanity ]
+                [ div [] [ text <| "❤️ Life " ++ String.fromInt model.you.health ++ " › " ++ String.fromInt predicted.health ]
+                , div [] [ text <| "🧠 Sanity " ++ String.fromInt model.you.sanity ++ " › " ++ String.fromInt predicted.sanity ]
                 , div [] [ text <| "📖 Wisdom " ++ String.fromInt model.you.wisdomUsed ++ "/" ++ String.fromInt model.you.wisdom ]
-                , div
-                    (if schemeValid model.you then
-                        [ class "text-blue-600 hover:text-blue-300"
-                        , if model.state == Playing then
-                            on "pointerup" (Decode.succeed <| SubmitScheme)
+                , case ( schemeValid model.you, predicted.health > 0 ) of
+                    ( False, _ ) ->
+                        div [ class "text-red-600" ] [ text <| "❌ Invalid scheme" ]
 
-                          else
-                            none
-                        ]
+                    ( _, False ) ->
+                        div [ class "text-green-600 hover:text-green-300", attrIf playing (on "pointerup" (Decode.succeed <| SubmitScheme)) ] [ text <| "💀 Ritual suicide" ]
 
-                     else
-                        [ class "text-red-600" ]
-                    )
-                    [ text <| "✨ Play scheme" ]
+                    ( True, True ) ->
+                        div [ class "text-blue-600 hover:text-blue-300", attrIf playing (on "pointerup" (Decode.succeed <| SubmitScheme)) ] [ text <| "✨ Play scheme" ]
                 ]
             , div [ class "flex-grow hand " ] <|
                 map
@@ -225,7 +234,7 @@ viewYourCard playing { card, selected, cost, index } =
             ]
             [ img [ Attributes.src details.art ] []
             , Html.span [ class "name" ]
-                (( text <| String.fromInt cost ++ " " ++ details.name )
+                ((text <| String.fromInt cost ++ " " ++ details.name)
                     :: (Maybe.map
                             (\sd ->
                                 [ Html.br [] [], text <| String.fromInt sd.influence ]
@@ -553,6 +562,10 @@ selectEffect ({ summon } as player) selected =
 
 getScheme hand =
     List.filter (\held -> held.selected) <| hand
+
+
+
+-- TODO trigger on new turn
 
 
 updateCosts : Player -> Player
