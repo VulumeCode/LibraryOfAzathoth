@@ -486,6 +486,7 @@ playCards ({ hand, wisdom, wisdomUsed, sanity, draw } as player) =
         , sanity = sanity - wisdomUsed
         , draw = draw + 1
     }
+        |> updateCosts
         |> drainSanityFromHealth
         |> calcPlayerDead
 
