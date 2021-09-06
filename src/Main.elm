@@ -17,6 +17,7 @@ import List.Extra exposing (..)
 import Maybe.Extra as Maybe exposing (orElse)
 import Process
 import Random
+import Result.Extra exposing (isOk)
 import Set
 import Storage exposing (Storage)
 import Summon exposing (..)
@@ -148,13 +149,13 @@ viewBoard model =
                 , div [] [ text <| "🧠 Sanity " ++ String.fromInt model.you.sanity ++ " › " ++ String.fromInt predicted.sanity ]
                 , div [] [ text <| "📖 Wisdom " ++ String.fromInt model.you.wisdomUsed ++ "/" ++ String.fromInt model.you.wisdom ]
                 , case ( schemeValid model.you, predicted.health > 0 ) of
-                    ( False, _ ) ->
-                        div [ class "text-red-600" ] [ text <| "❌ Invalid scheme" ]
+                    ( Err reason, _ ) ->
+                        div [ class "text-red-600 tooltip" ] [ text <| "❌ Invalid scheme", tooltip (text <| reason) ]
 
                     ( _, False ) ->
                         div [ class "text-green-600 hover:text-green-300", attrIf playing (on "pointerup" (Decode.succeed <| SubmitScheme)) ] [ text <| "💀 Ritual suicide" ]
 
-                    ( True, True ) ->
+                    ( Ok (), True ) ->
                         div [ class "text-blue-600 hover:text-blue-300", attrIf playing (on "pointerup" (Decode.succeed <| SubmitScheme)) ] [ text <| "✨ Play scheme" ]
                 ]
             , div [ class "flex-grow hand " ] <|
@@ -162,6 +163,12 @@ viewBoard model =
                     (viewYourCard (model.state == Playing))
                     model.you.hand
             ]
+        ]
+
+
+tooltip : Html msg -> Html msg
+tooltip content = div [ class "top"] [
+            content, Html.i [] []
         ]
 
 
@@ -384,7 +391,7 @@ randomAI ({ they } as model) =
         | they =
             Maybe.withDefault they <|
                 List.head <|
-                    List.filter schemeValid <|
+                    List.filter (schemeValid >> isOk) <|
                         map (\option -> updateCosts { they | hand = option }) <|
                             possibleHands they.hand
     }
@@ -603,12 +610,13 @@ updateCosts ({ hand } as player) =
     }
 
 
-schemeValid : Player -> Bool
+schemeValid : Player -> Result String ()
 schemeValid player =
-    player.wisdomUsed
-        <= player.wisdom
-        && 1
-        >= (length <| filter (\c -> (cardDetails c.card).cardType == Types.M) (getScheme player.hand))
+    if player.wisdomUsed > player.wisdom
+    then Err "Not enough wisdom."
+    else if (length <| filter (\c -> (cardDetails c.card).cardType == Types.M) (getScheme player.hand)) > 1
+    then Err "More then one summon selected."
+    else Ok ()
 
 
 subscriptions : Model -> Sub Msg

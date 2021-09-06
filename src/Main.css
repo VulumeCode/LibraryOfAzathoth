@@ -138,7 +138,7 @@ button:focus {
   padding: 0 0.4em;
 }
 .imageContainer span.text  {
-  font-family: 'Kurale', 'Jost', 'Comic Sans MS', 'Calibri';
+  font-family: 'Kurale', 'Calibri';
   /* font-weight: 600; */
   font-size: 10px;
   line-height: 0.9em;
@@ -208,4 +208,61 @@ button:focus {
 
   font-size: 1.6em;
   vertical-align: bottom;
+}
+
+
+
+/********** TOOLTIP **********/
+
+.tooltip {
+  display:inline-block;
+  position:relative;
+  border-bottom:1px dotted #666;
+  text-align:left;
+}
+
+.tooltip .top {
+  min-width:200px; 
+  height: initial;
+  top:0px;
+  left:50%;
+  transform:translate(-25%, -100%);
+  padding:10px 20px;
+  color:rgba(26, 32, 44);
+  background-color:rgba(245,231,202,0.81569);
+  font-weight:normal;
+  text-shadow: none;
+  font-family: 'Kurale', 'Calibri';
+  font-size:1rem;
+  border-radius:8px;
+  position:absolute;
+  z-index:99999999;
+  box-sizing:border-box;
+  box-shadow:0 1px 8px rgba(0,0,0,0.5);
+  visibility:hidden; opacity:0; transition:opacity 0.8s;
+}
+
+.tooltip:hover .top {
+  visibility:visible; opacity:1;
+}
+
+.tooltip .top i {
+  position:absolute;
+  top:100%;
+  left:25%;
+  margin-left:-12px;
+  width:24px;
+  height:12px;
+  overflow:hidden;
+}
+
+.tooltip .top i::after {
+  content:'';
+  position:absolute;
+  width:12px;
+  height:12px;
+  left:50%;
+  transform:translate(-50%,-50%) rotate(45deg);
+  background-color:rgba(245,231,202,0.81569);
+  box-shadow:0 1px 8px rgba(0,0,0,0.5);
 }

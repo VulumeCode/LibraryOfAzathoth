@@ -16,6 +16,7 @@
             "elm-community/html-extra": "3.4.0",
             "elm-community/list-extra": "8.4.0",
             "elm-community/maybe-extra": "5.2.0",
+            "elm-community/result-extra": "2.4.0",
             "hecrj/html-parser": "2.4.0",
             "mbr/elm-extras": "2.1.0"
         },
