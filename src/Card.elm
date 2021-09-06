@@ -354,7 +354,7 @@ cardDetails card =
         C9 ->
             { name = "Wish Fulfillment"
             , cost = 2
-            , text = "Deal 3 wisdom."
+            , text = "Gain 3 wisdom."
             , art = "images/cards/Cups09.jpg"
             , effect = [ GainWisdom (\_ _ -> 3) ]
             , cardType = C
