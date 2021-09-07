@@ -266,3 +266,32 @@ button:focus {
   background-color:rgba(245,231,202,0.81569);
   box-shadow:0 1px 8px rgba(0,0,0,0.5);
 }
+
+
+
+/* The Modal (background) */
+.modal {
+  /* display: none; Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  padding-top: 20%; /* Location of the box */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content */
+.modal-content {
+  background-color: rgba(245,231,202,0.81569);
+  margin: auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 50%;
+  font-size: 4rem;
+  text-align: center;
+  border-radius:8px;
+}

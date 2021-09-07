@@ -8,7 +8,7 @@ import Extras.Html.Attributes exposing (none)
 import Html exposing (Html, button, div, img, text)
 import Html.Attributes as Attributes exposing (class, style)
 import Html.Events as Events exposing (on, onClick)
-import Html.Extra as Html exposing (static)
+import Html.Extra as Html exposing (nothing, static)
 import Html.Parser as Parser
 import Html.Parser.Util as Parser
 import Json.Decode as Decode exposing (Value)
@@ -62,6 +62,10 @@ handSize =
 
 init : Value -> ( Model, Cmd Msg )
 init _ =
+    initGame
+
+
+initGame =
     ( { you = initPlayer
       , they = initPlayer
       , turn = 1
@@ -114,6 +118,28 @@ viewRoot : Model -> Html Msg
 viewRoot model =
     div [ class "flex justify-center h-full items-center select-none font-display relative" ]
         [ viewBoard model
+        , if model.state == GameOver then
+            div [ class "modal", on "pointerup" (Decode.succeed <| Restart) ]
+                [ div [ class "modal-content" ]
+                    [ text <| "Game over"
+                    , Html.br [] []
+                    , text <|
+                        case
+                            ( model.you.dead, model.they.dead )
+                        of
+                            ( False, True ) ->
+                                "Victory!"
+
+                            ( True, False ) ->
+                                "Defeat..."
+
+                            ( _, _ ) ->
+                                "Draw."
+                    ]
+                ]
+
+          else
+            nothing
         ]
 
 
@@ -126,6 +152,9 @@ viewBoard model =
         playing =
             model.state == Playing
 
+        gameOver =
+            model.state == GameOver
+
         predicted =
             playCards model.you
     in
@@ -133,7 +162,7 @@ viewBoard model =
         [ div [ class "they flex p-1  text-gray-900", style "height" "25%" ]
             [ div [ class "flex-grow hand " ] <|
                 map
-                    (viewTheirCard revealThey)
+                    (viewTheirCard gameOver revealThey)
                     model.they.hand
             , div [ class "flex-none playerStats text-gray-600", style "font-size" "200%" ]
                 [ div [] [ text <| String.fromInt model.they.health ++ " Life ❤️" ]
@@ -167,8 +196,10 @@ viewBoard model =
 
 
 tooltip : Html msg -> Html msg
-tooltip content = div [ class "top"] [
-            content, Html.i [] []
+tooltip content =
+    div [ class "top" ]
+        [ content
+        , Html.i [] []
         ]
 
 
@@ -266,9 +297,9 @@ viewYourCard playing { card, selected, cost, index } =
         ]
 
 
-viewTheirCard : Bool -> { a | card : Card, selected : Bool, cost : Int } -> Html Msg
-viewTheirCard settling { card, selected, cost } =
-    if selected && settling then
+viewTheirCard : Bool -> Bool -> { a | card : Card, selected : Bool, cost : Int } -> Html Msg
+viewTheirCard gameOver settling { card, selected, cost } =
+    if (selected && settling) || gameOver then
         let
             details =
                 Card.cardDetails card
@@ -321,6 +352,9 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg ({ you, they } as model) =
     case msg of
+        Restart ->
+            initGame
+
         SelectCard card ->
             ( { model | you = selectCard you card }
             , Cmd.none
@@ -368,9 +402,6 @@ update msg ({ you, they } as model) =
             ( { model | they = dealCards they cs }
             , Cmd.none
             )
-
-        _ ->
-            ( model, Cmd.none )
 
 
 possibleHands : List { a | selected : Bool } -> List (List { a | selected : Bool })
@@ -613,11 +644,14 @@ updateCosts ({ hand } as player) =
 
 schemeValid : Player -> Result String ()
 schemeValid player =
-    if player.wisdomUsed > player.wisdom
-    then Err "Not enough wisdom."
-    else if (length <| filter (\c -> (cardDetails c.card).cardType == Types.M) (getScheme player.hand)) > 1
-    then Err "More then one summon selected."
-    else Ok ()
+    if player.wisdomUsed > player.wisdom then
+        Err "Not enough wisdom."
+
+    else if (length <| filter (\c -> (cardDetails c.card).cardType == Types.M) (getScheme player.hand)) > 1 then
+        Err "More then one summon selected."
+
+    else
+        Ok ()
 
 
 subscriptions : Model -> Sub Msg
