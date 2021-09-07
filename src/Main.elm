@@ -12,8 +12,9 @@ import Html.Extra as Html exposing (nothing, static)
 import Html.Parser as Parser
 import Html.Parser.Util as Parser
 import Json.Decode as Decode exposing (Value)
-import List exposing (concatMap, filter, foldl, indexedMap, length, map)
+import List exposing (concat, concatMap, filter, foldl, indexedMap, length, map)
 import List.Extra exposing (..)
+import Maybe exposing (withDefault)
 import Maybe.Extra as Maybe exposing (orElse)
 import Process
 import Random
@@ -437,7 +438,7 @@ settleSchemes ({ you, they } as model) =
         theirScheme =
             map (\c -> cardDetails c.card) <| getScheme they.hand
 
-        getEffect from to scheme =
+        getEffectTotal from to scheme =
             foldl
                 (\step total ->
                     case step of
@@ -463,32 +464,34 @@ settleSchemes ({ you, they } as model) =
                             total
                 )
                 { damage = 0, draw = 0, gainWisdom = 0, gainSanity = 0, gainHealth = 0, summon = Nothing }
-            <|
-                concatMap .effect scheme
+                scheme
 
-        yourEffect =
-            getEffect you they yourScheme
+        summonEffect player =
+            player.summon |> Maybe.map (.effects >> filter .selected >> map .effects >> concat) |> withDefault []
 
-        theirEffect =
-            getEffect they you theirScheme
+        yourEffectTotal =
+            getEffectTotal you they (concatMap .effect yourScheme ++ summonEffect you)
+
+        theirEffectTotal =
+            getEffectTotal they you (concatMap .effect theirScheme ++ summonEffect they)
     in
     { model
         | you =
             { you
-                | health = you.health - theirEffect.damage + yourEffect.gainHealth
-                , draw = you.draw + yourEffect.draw
-                , wisdom = you.wisdom + yourEffect.gainWisdom
-                , sanity = you.sanity + yourEffect.gainSanity
-                , summon = yourEffect.summon |> orElse you.summon
+                | health = you.health - theirEffectTotal.damage + yourEffectTotal.gainHealth
+                , draw = you.draw + yourEffectTotal.draw
+                , wisdom = you.wisdom + yourEffectTotal.gainWisdom
+                , sanity = you.sanity + yourEffectTotal.gainSanity
+                , summon = yourEffectTotal.summon |> orElse you.summon
             }
                 |> playCards
         , they =
             { they
-                | health = they.health - yourEffect.damage + theirEffect.gainHealth
-                , draw = they.draw + theirEffect.draw
-                , wisdom = they.wisdom + theirEffect.gainWisdom
-                , sanity = they.sanity + theirEffect.gainSanity
-                , summon = theirEffect.summon |> orElse they.summon
+                | health = they.health - yourEffectTotal.damage + theirEffectTotal.gainHealth
+                , draw = they.draw + theirEffectTotal.draw
+                , wisdom = they.wisdom + theirEffectTotal.gainWisdom
+                , sanity = they.sanity + theirEffectTotal.gainSanity
+                , summon = theirEffectTotal.summon |> orElse they.summon
             }
                 |> playCards
         , state = Playing
