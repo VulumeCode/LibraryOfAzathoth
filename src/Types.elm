@@ -1,9 +1,11 @@
 module Types exposing (..)
+
 import Html exposing (Html)
 
 
 type alias Player =
-    { hand : List Held
+    { deck : List Card
+    , hand : List Held
     , health : Int
     , sanity : Int
     , wisdom : Int
@@ -22,6 +24,7 @@ type alias Held =
     , index : Int
     }
 
+
 type alias CardDetails =
     { name : String
     , cost : Int
@@ -38,8 +41,9 @@ type alias SummonDetails =
     , card : Card
     }
 
+
 type alias SummonEffect =
-    { cost  : Int
+    { cost : Int
     , effects : List Effect
     , text : Html Never
     , selected : Bool

@@ -75,7 +75,7 @@ cardDetails card =
             , cost = 2
             , text = "Gain 2 sanity for every card in your opponent's scheme."
             , art = "images/cards/Wands08.jpg"
-            , effect = [ GainSanity  (\_ they -> 2 * (List.length <| List.filter .selected they.hand))]
+            , effect = [ GainSanity (\_ they -> 2 * (List.length <| List.filter .selected they.hand)) ]
             , cardType = W
             }
 
@@ -129,7 +129,7 @@ cardDetails card =
             , cost = 4
             , text = "Other Wand cards cost 3 less to cast.<br>Gain 1 sanity."
             , art = "images/cards/Wands14.jpg"
-            , effect = 
+            , effect =
                 [ CostMod
                     (\_ this other ->
                         if this /= other && (other.card |> cardDetails |> .cardType) == W then
@@ -229,7 +229,7 @@ cardDetails card =
             , cost = 3
             , text = "Deal 2 damage to yourself and 5 damage to your opponent."
             , art = "images/cards/Swords10.jpg"
-            , effect = [ Damage (\_ _ -> 5) , GainHealth (\_ _ -> -2)]
+            , effect = [ Damage (\_ _ -> 5), GainHealth (\_ _ -> -2) ]
             , cardType = S
             }
 
@@ -247,7 +247,7 @@ cardDetails card =
             , cost = 3
             , text = "Deal 5 damage. You lose 1 intellect."
             , art = "images/cards/Swords12.jpg"
-            , effect = [ Damage (\_ _ -> 5), GainWisdom (\_ _ -> -1)]
+            , effect = [ Damage (\_ _ -> 5), GainWisdom (\_ _ -> -1) ]
             , cardType = S
             }
 
@@ -601,7 +601,7 @@ cardDetails card =
             , cost = 6
             , text = "When summoned, you and your opponent lose all sanity."
             , art = "images/cards/RWS_Tarot_04_Emperor.jpg"
-            , effect = [ Summon M4, GainSanity (\you _ -> -(you.sanity) + you.wisdomUsed ) ] --TODO
+            , effect = [ Summon M4, GainSanity (\you _ -> -you.sanity + you.wisdomUsed) ] --TODO
             , cardType = M
             }
 
@@ -761,7 +761,8 @@ cardDetails card =
 
 allCards : List Card
 allCards =
-    [ W1, W2, W3, W4, W5, W6, W7, W8, W9, W10, W11, W12, W13, W14, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, M0, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11, M12, M13, M14, M15, M16, M17, M18, M19, M20, M21 ]
+    [ W1, W2, W3, W4, W5, W6, W7, W8, W9, W10, W11, W12, W13, W14, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, M0, M1, M2, M3, M4  , M5, M6, M7, M8, M9, M10, M11, M12, M13, M14, M15, M16, M17, M18, M19, M20, M21]
+
 
 
 random : Random.Generator Card

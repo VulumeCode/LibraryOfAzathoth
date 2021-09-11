@@ -18,6 +18,7 @@ import Maybe exposing (withDefault)
 import Maybe.Extra as Maybe exposing (orElse)
 import Process
 import Random
+import Random.List as Random
 import Result.Extra exposing (isOk)
 import Set
 import Storage exposing (Storage)
@@ -45,7 +46,8 @@ type State
 
 initPlayer : Player
 initPlayer =
-    { hand = []
+    { deck = []
+    , hand = []
     , health = 20
     , sanity = 20
     , wisdom = 1
@@ -75,8 +77,8 @@ initGame =
       }
       -- , Random.generate Spawn Tetrimino.random
     , Cmd.batch
-        [ Random.generate DealYouHand (Random.list handSize Card.random)
-        , Random.generate DealTheyHand (Random.list handSize Card.random)
+        [ Random.generate DealYouHand (Random.choices handSize Card.allCards)
+        , Random.generate DealTheyHand (Random.choices handSize Card.allCards)
         ]
     )
 
@@ -350,10 +352,10 @@ type Msg
     | SelectEffect Int
     | SubmitScheme
     | SettleSchemes
-    | DealYouHand (List Card)
-    | DealTheyHand (List Card)
-    | DealYouCards (List Card)
-    | DealTheyCards (List Card)
+    | DealYouHand ( List Card, List Card )
+    | DealTheyHand ( List Card, List Card )
+    | DealYouCards ( List Card, List Card )
+    | DealTheyCards ( List Card, List Card )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -372,19 +374,19 @@ update msg ({ you, they } as model) =
             , Cmd.none
             )
 
-        DealYouHand cards ->
-            ( { model | you = dealHand you cards }
+        DealYouHand dealt ->
+            ( { model | you = dealHand you dealt }
             , Cmd.none
             )
 
-        DealTheyHand cards ->
-            ( { model | they = dealHand they cards }
+        DealTheyHand dealt ->
+            ( { model | they = dealHand they dealt }
             , Cmd.none
             )
 
         SubmitScheme ->
             ( { model | state = Settling } |> randomAI
-            , Process.sleep 2000
+            , Process.sleep 20
                 |> Task.perform (\_ -> SettleSchemes)
             )
 
@@ -395,8 +397,8 @@ update msg ({ you, they } as model) =
             in
             ( settled
             , Cmd.batch
-                [ Random.generate DealYouCards (Random.list settled.you.draw Card.random)
-                , Random.generate DealTheyCards (Random.list settled.they.draw Card.random)
+                [ Random.generate DealYouCards (Random.choices settled.you.draw settled.you.deck)
+                , Random.generate DealTheyCards (Random.choices settled.they.draw settled.they.deck)
                 ]
             )
 
@@ -529,9 +531,10 @@ calcGameOver model =
 
 
 playCards : Player -> Player
-playCards ({ hand, wisdom, wisdomUsed, sanity, draw, summon } as player) =
+playCards ({ hand, wisdom, wisdomUsed, sanity, draw, summon, deck } as player) =
     { player
         | hand = List.filter (\held -> not held.selected) <| hand
+        , deck = deck ++ map .card (List.filter (\held -> held.selected) <| hand)
         , wisdom = wisdom + 1
         , wisdomUsed = 0
         , sanity = sanity - wisdomUsed
@@ -597,18 +600,20 @@ id x =
     x
 
 
-dealHand : Player -> List Card -> Player
-dealHand player cards =
+dealHand : Player -> ( List Card, List Card ) -> Player
+dealHand player ( dealt, deck ) =
     { player
-        | hand = sortHand <| map (\c -> { card = c, selected = False, cost = (cardDetails c).cost, index = -1 }) <| cards
+        | deck = deck
+        , hand = sortHand <| map (\c -> { card = c, selected = False, cost = (cardDetails c).cost, index = -1 }) <| dealt
         , draw = 0
     }
 
 
-dealCards : Player -> List Card -> Player
-dealCards ({ hand } as player) cs =
+dealCards : Player -> ( List Card, List Card ) -> Player
+dealCards ({ hand } as player) ( dealt, deck ) =
     { player
-        | hand = sortHand <| List.append hand (map (\c -> { card = c, selected = False, cost = (cardDetails c).cost, index = -1 }) cs)
+        | deck = deck
+        , hand = sortHand <| List.append hand (map (\c -> { card = c, selected = False, cost = (cardDetails c).cost, index = -1 }) dealt)
         , draw = 0
     }
 
