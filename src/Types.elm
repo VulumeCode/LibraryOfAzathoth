@@ -10,6 +10,7 @@ type alias Player =
     , wisdomUsed : Int
     , summon : Maybe SummonDetails
     , dead : Bool
+    , lich : Bool
     , draw : Int
     }
 
@@ -47,7 +48,7 @@ type alias SummonEffect =
 
 type Effect
     = Damage (Player -> Player -> Int)
-    | Discard (Player -> Player -> Int)
+    | PreventDraw (Player -> Player -> Int)
     | Draw (Player -> Player -> Int)
     | GainWisdom (Player -> Player -> Int)
     | GainSanity (Player -> Player -> Int)

@@ -34,40 +34,44 @@ summonDetails card =
               card = card
             , influence = 3
             , effects =
-                [ SummonEffect 1 [ Draw (\_ _ -> 1) ] (text "Draw a card.") False
-                , SummonEffect -2 [ Discard (\_ _ -> 1) ] (text "Opponent discards a card.") True
+                [ SummonEffect 1 [ Draw (\_ _ -> 1) ] (text "Draw a card.") True
+                , SummonEffect -2 [ PreventDraw (\_ _ -> 1) ] (text "Opponent draws one card less.") False
                 ]
             }
+
+        M2 ->
+            { -- "The High Priestess"
+              card = card
+            , influence = 1
+            , effects =
+                [ SummonEffect 0 [ GainWisdom (\_ _ -> 1) ] (text "Gain one wisdom.") True
+                ]
+            }
+
+        M3 ->
+            { -- "The Empress"
+              card = card
+            , influence = 1
+            , effects =
+                [ SummonEffect 0 [ GainHealth (\_ _ -> 1) ] (text "Gain one health.") True
+                ]
+            }
+
+        M4 ->
+            { -- "Cthulhu Sleeping"
+              card = card
+            , influence = 4
+            , effects =
+                [ SummonEffect 2 [ GainSanity (\_ _ -> -1) ] (text "Lose one sanity.") True
+                , SummonEffect -6 [PreventDraw(\_ _ -> 10) ] (text "Banish all summons. Opponent discards all summon cards.") False --TODO
+                ]
+            }
+
+
 
         _ ->
             summonDetails M0
 
-
-
--- M2 ->
---     { name = "The High Priestess"
---     , cost = 4
---     , text = "Summon ~."
---     , art = "images/cards/RWS_Tarot_02_High_Priestess.jpg"
---     , effect = [ Summon M2 ]
---     , cardType = M
---     }
--- M3 ->
---     { name = "The Empress"
---     , cost = 4
---     , text = "Summon ~."
---     , art = "images/cards/RWS_Tarot_03_Empress.jpg"
---     , effect = [ Summon M3 ]
---     , cardType = M
---     }
--- M4 ->
---     { name = "Cthulhu Sleeping"
---     , cost = 4
---     , text = "Summon ~."
---     , art = "images/cards/RWS_Tarot_04_Emperor.jpg"
---     , effect = [ Summon M4 ]
---     , cardType = M
---     }
 -- M5 ->
 --     { name = "Nyarlathotep"
 --     , cost = 4

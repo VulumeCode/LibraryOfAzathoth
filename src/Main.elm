@@ -48,10 +48,11 @@ initPlayer =
     { hand = []
     , health = 20
     , sanity = 20
-    , wisdom = 4
+    , wisdom = 1
     , wisdomUsed = 0
-    , summon = Just (summonDetails M1)
+    , summon = Nothing
     , dead = False
+    , lich = False
     , draw = 0
     }
 
@@ -166,24 +167,24 @@ viewBoard model =
                     (viewTheirCard gameOver revealThey)
                     model.they.hand
             , div [ class "flex-none playerStats text-gray-600", style "font-size" "200%" ]
-                [ div [] [ text <| String.fromInt model.they.health ++ " Life ❤️" ]
-                , div [] [ text <| String.fromInt model.they.sanity ++ " Sanity 🧠" ]
-                , div [] [ text <| String.fromInt model.they.wisdomUsed ++ "/" ++ String.fromInt model.they.wisdom ++ " Wisdom 📖" ]
+                [ div [] [ text <| String.fromInt model.they.wisdomUsed ++ "/" ++ String.fromInt model.they.wisdom ++ " Intellect 📜" ]
+                , div [] [ text <| String.fromInt model.they.sanity ++ ifElse model.they.lich " Madness 💀" " Sanity 🧠" ]
+                , div [] [ text <| String.fromInt model.they.health ++ " Vitality 🖤" ]
                 ]
             ]
         , div [ class "flex p-1 justify-center text-gray-900 summons", style "height" "50%" ]
             [ viewSummon False revealThey model.they.summon, viewSummon True True model.you.summon ]
         , div [ class "you flex p-1  text-gray-900", style "height" "25%" ]
             [ div [ class "flex-none playerStats text-gray-600 ", style "font-size" "200%" ]
-                [ div [] [ text <| "❤️ Life " ++ String.fromInt model.you.health ++ " › " ++ String.fromInt predicted.health ]
-                , div [] [ text <| "🧠 Sanity " ++ String.fromInt model.you.sanity ++ " › " ++ String.fromInt predicted.sanity ]
-                , div [] [ text <| "📖 Wisdom " ++ String.fromInt model.you.wisdomUsed ++ "/" ++ String.fromInt model.you.wisdom ]
+                [ div [] [ text <| "📜 Intellect " ++ String.fromInt model.you.wisdomUsed ++ "/" ++ String.fromInt model.you.wisdom ]
+                , div [] [ text <| ifElse model.you.lich "💀 Madness " "🧠 Sanity " ++ String.fromInt model.you.sanity ++ " › " ++ String.fromInt predicted.sanity ]
+                , div [] [ text <| "🖤 Vitality " ++ String.fromInt model.you.health ++ " › " ++ String.fromInt predicted.health ]
                 , case ( schemeValid model.you, predicted.health > 0 ) of
                     ( Err reason, _ ) ->
                         div [ class "text-red-600 tooltip" ] [ text <| "❌ Invalid scheme", tooltip (text <| reason) ]
 
                     ( _, False ) ->
-                        div [ class "text-green-600 hover:text-green-300", attrIf playing (on "pointerup" (Decode.succeed <| SubmitScheme)) ] [ text <| "💀 Ritual suicide" ]
+                        div [ class "text-green-600 hover:text-green-300 tooltip", attrIf playing (on "pointerup" (Decode.succeed <| SubmitScheme)) ] [ text <| "💀 Ritual suicide", tooltip lichWarning ]
 
                     ( Ok (), True ) ->
                         div [ class "text-blue-600 hover:text-blue-300", attrIf playing (on "pointerup" (Decode.succeed <| SubmitScheme)) ] [ text <| "✨ Play scheme" ]
@@ -194,6 +195,11 @@ viewBoard model =
                     model.you.hand
             ]
         ]
+
+
+lichWarning : Html msg
+lichWarning =
+    Html.div [] [ text <| "Gain enough life to survive this turn and become a lich.", Html.br [] [], text <| "Liches are permanently insane." ]
 
 
 tooltip : Html msg -> Html msg
@@ -432,6 +438,12 @@ randomAI ({ they } as model) =
 settleSchemes : Model -> Model
 settleSchemes ({ you, they } as model) =
     let
+        newYou =
+            playCards you |> calcPlayerInsaneAdvantage
+
+        newThey =
+            playCards they |> calcPlayerInsaneAdvantage
+
         yourScheme =
             map (\c -> cardDetails c.card) <| getScheme you.hand
 
@@ -460,10 +472,13 @@ settleSchemes ({ you, they } as model) =
                         Summon m ->
                             { total | summon = Just (summonDetails m) }
 
+                        PreventDraw f ->
+                            { total | preventDraw = total.preventDraw + f from to }
+
                         _ ->
                             total
                 )
-                { damage = 0, draw = 0, gainWisdom = 0, gainSanity = 0, gainHealth = 0, summon = Nothing }
+                { summon = Nothing, damage = 0, draw = 0, gainWisdom = 0, gainSanity = 0, gainHealth = 0, preventDraw = 0 }
                 scheme
 
         summonEffect player =
@@ -477,23 +492,25 @@ settleSchemes ({ you, they } as model) =
     in
     { model
         | you =
-            { you
-                | health = you.health - theirEffectTotal.damage + yourEffectTotal.gainHealth
-                , draw = you.draw + yourEffectTotal.draw
-                , wisdom = you.wisdom + yourEffectTotal.gainWisdom
-                , sanity = you.sanity + yourEffectTotal.gainSanity
-                , summon = yourEffectTotal.summon |> orElse you.summon
+            { newYou
+                | health = newYou.health - theirEffectTotal.damage + yourEffectTotal.gainHealth
+                , draw = newYou.draw + yourEffectTotal.draw - theirEffectTotal.preventDraw
+                , wisdom = newYou.wisdom + yourEffectTotal.gainWisdom
+                , sanity = newYou.sanity + yourEffectTotal.gainSanity
+                , summon = yourEffectTotal.summon |> orElse newYou.summon
+                , lich = newYou.lich || newYou.health <= 0
             }
-                |> playCards
+                |> calcPlayerDead
         , they =
-            { they
-                | health = they.health - yourEffectTotal.damage + theirEffectTotal.gainHealth
-                , draw = they.draw + theirEffectTotal.draw
-                , wisdom = they.wisdom + theirEffectTotal.gainWisdom
-                , sanity = they.sanity + theirEffectTotal.gainSanity
-                , summon = theirEffectTotal.summon |> orElse they.summon
+            { newThey
+                | health = newThey.health - yourEffectTotal.damage + theirEffectTotal.gainHealth
+                , draw = newThey.draw + theirEffectTotal.draw - yourEffectTotal.preventDraw
+                , wisdom = newThey.wisdom + theirEffectTotal.gainWisdom
+                , sanity = newThey.sanity + theirEffectTotal.gainSanity
+                , summon = theirEffectTotal.summon |> orElse newThey.summon
+                , lich = newThey.lich || newThey.health <= 0
             }
-                |> playCards
+                |> calcPlayerDead
         , state = Playing
     }
         |> calcGameOver
@@ -512,17 +529,33 @@ calcGameOver model =
 
 
 playCards : Player -> Player
-playCards ({ hand, wisdom, wisdomUsed, sanity, draw } as player) =
+playCards ({ hand, wisdom, wisdomUsed, sanity, draw, summon } as player) =
     { player
         | hand = List.filter (\held -> not held.selected) <| hand
         , wisdom = wisdom + 1
         , wisdomUsed = 0
         , sanity = sanity - wisdomUsed
         , draw = draw + 1
+        , summon = summon |> Maybe.andThen playSummon
     }
         |> updateCosts
         |> drainSanityFromHealth
-        |> calcPlayerDead
+
+
+playSummon : SummonDetails -> Maybe SummonDetails
+playSummon summon =
+    let
+        calcInfluence =
+            summon.influence + (summon.effects |> filter .selected |> map .cost |> List.sum)
+    in
+    if calcInfluence <= 0 then
+        Nothing
+
+    else
+        Just
+            { summon
+                | influence = calcInfluence
+            }
 
 
 drainSanityFromHealth : { a | sanity : number, health : number } -> { a | sanity : number, health : number }
@@ -542,6 +575,22 @@ calcPlayerDead player =
     { player
         | dead = player.health <= 0
     }
+
+
+isInsane player =
+    not player.dead
+        && (player.lich || player.sanity <= 0)
+
+
+calcPlayerInsaneAdvantage : Player -> Player
+calcPlayerInsaneAdvantage player =
+    if isInsane player then
+        { player
+            | draw = player.draw + 1
+        }
+
+    else
+        player
 
 
 id x =
