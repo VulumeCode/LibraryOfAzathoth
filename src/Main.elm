@@ -50,7 +50,7 @@ initPlayer =
     , hand = []
     , vitality = 20
     , sanity = 20
-    , intellect = 6
+    , intellect = 1
     , intellectUsed = 0
     , summon = Nothing
     , dead = False
@@ -343,6 +343,7 @@ type Msg
     | SelectCard Int
     | SelectEffect Int
     | SubmitScheme
+    | RandomAI Random.Seed
     | SettleSchemes
     | DealYouHand ( List Card, List Card )
     | DealTheyHand ( List Card, List Card )
@@ -377,7 +378,12 @@ update msg ({ you, they } as model) =
             )
 
         SubmitScheme ->
-            ( { model | state = Settling } |> randomAI
+            ( model
+            , Random.generate RandomAI Random.independentSeed 
+            )
+
+        RandomAI seed-> 
+            ( { model | state = Settling } |> randomAI seed
             , Process.sleep 2000
                 |> Task.perform (\_ -> SettleSchemes)
             )
@@ -417,15 +423,32 @@ possibleHands list =
                 (possibleHands rest)
 
 
-randomAI : Model -> Model
-randomAI ({ they } as model) =
+possibleSummonEffects : Maybe SummonDetails -> List (Maybe SummonDetails)
+possibleSummonEffects summon =
+    case summon of
+        Nothing ->
+            [ Nothing ]
+
+        Just ({ effects } as aSummon) ->
+            effects
+                |> map
+                    (\chosen -> Just { aSummon | effects = effects |> map (\effect -> { effect | selected = effect == chosen }) })
+
+
+randomAI : Random.Seed -> Model -> Model
+randomAI seed ({ they } as model) =
+    let
+        options = List.filter (schemeValid >> isOk) <|
+                        lift2 (\h s -> updateCosts { they | hand = h, summon = s })
+                            (possibleHands they.hand)
+                            (possibleSummonEffects they.summon)
+
+        ((choice,_),_) = Random.step (Random.choose options) seed
+    in 
     { model
         | they =
-            Maybe.withDefault they <|
-                List.head <|
-                    List.filter (schemeValid >> isOk) <|
-                        map (\option -> updateCosts { they | hand = option }) <|
-                            possibleHands they.hand
+            Maybe.withDefault they choice
+                    
     }
 
 
