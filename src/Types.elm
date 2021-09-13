@@ -6,10 +6,10 @@ import Html exposing (Html)
 type alias Player =
     { deck : List Card
     , hand : List Held
-    , health : Int
+    , vitality : Int
     , sanity : Int
-    , wisdom : Int
-    , wisdomUsed : Int
+    , intellect : Int
+    , intellectUsed : Int
     , summon : Maybe SummonDetails
     , dead : Bool
     , lich : Bool
@@ -52,11 +52,13 @@ type alias SummonEffect =
 
 type Effect
     = Damage (Player -> Player -> Int)
+    -- | InfluenceDamage (Player -> Player -> Int)
     | PreventDraw (Player -> Player -> Int)
     | Draw (Player -> Player -> Int)
-    | GainWisdom (Player -> Player -> Int)
+    -- | Discard (Player -> Held -> Held -> Bool)
+    | GainIntellect (Player -> Player -> Int)
     | GainSanity (Player -> Player -> Int)
-    | GainHealth (Player -> Player -> Int)
+    | GainVitality (Player -> Player -> Int)
     | Summon Card
     | CostMod (Player -> Held -> Held -> Int)
     | Debug

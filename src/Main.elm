@@ -48,10 +48,10 @@ initPlayer : Player
 initPlayer =
     { deck = []
     , hand = []
-    , health = 20
+    , vitality = 20
     , sanity = 20
-    , wisdom = 1
-    , wisdomUsed = 0
+    , intellect = 6
+    , intellectUsed = 0
     , summon = Nothing
     , dead = False
     , lich = False
@@ -169,19 +169,19 @@ viewBoard model =
                     (viewTheirCard gameOver revealThey)
                     model.they.hand
             , div [ class "flex-none playerStats text-gray-600", style "font-size" "200%" ]
-                [ div [] [ text <| String.fromInt model.they.wisdomUsed ++ "/" ++ String.fromInt model.they.wisdom ++ " Intellect 📜" ]
+                [ div [] [ text <| String.fromInt model.they.intellectUsed ++ "/" ++ String.fromInt model.they.intellect ++ " Intellect 📜" ]
                 , div [] [ text <| String.fromInt model.they.sanity ++ ifElse model.they.lich " Madness 💀" " Sanity 🧠" ]
-                , div [] [ text <| String.fromInt model.they.health ++ " Vitality 🖤" ]
+                , div [] [ text <| String.fromInt model.they.vitality ++ " Vitality 🖤" ]
                 ]
             ]
         , div [ class "flex p-1 justify-center text-gray-900 summons", style "height" "50%" ]
             [ viewSummon False revealThey model.they.summon, viewSummon True True model.you.summon ]
         , div [ class "you flex p-1  text-gray-900", style "height" "25%" ]
             [ div [ class "flex-none playerStats text-gray-600 ", style "font-size" "200%" ]
-                [ div [] [ text <| "📜 Intellect " ++ String.fromInt model.you.wisdomUsed ++ "/" ++ String.fromInt model.you.wisdom ]
+                [ div [] [ text <| "📜 Intellect " ++ String.fromInt model.you.intellectUsed ++ "/" ++ String.fromInt model.you.intellect ]
                 , div [] [ text <| ifElse model.you.lich "💀 Madness " "🧠 Sanity " ++ String.fromInt model.you.sanity ++ " › " ++ String.fromInt predicted.sanity ]
-                , div [] [ text <| "🖤 Vitality " ++ String.fromInt model.you.health ++ " › " ++ String.fromInt predicted.health ]
-                , case ( schemeValid model.you, predicted.health > 0 ) of
+                , div [] [ text <| "🖤 Vitality " ++ String.fromInt model.you.vitality ++ " › " ++ String.fromInt predicted.vitality ]
+                , case ( schemeValid model.you, predicted.vitality > 0 ) of
                     ( Err reason, _ ) ->
                         div [ class "text-red-600 tooltip" ] [ text <| "❌ Invalid scheme", tooltip (text <| reason) ]
 
@@ -230,7 +230,7 @@ viewSummon interactive revealed summon =
             div [ class "imageContainer" ]
                 [ div []
                     [ img [ Attributes.src cdetails.art ] []
-                    , Html.span [ class "name", style "font-size" "200%" ] [ text <| cdetails.name, Html.br [] [], text <| String.fromInt influence ]
+                    , Html.span [ class "name", style "font-size" "200%" ] [ text <| cdetails.name, Html.br [] [], text <| "[" ++ String.fromInt influence ++ "]" ]
                     , Html.span [ class "text", style "font-size" "125%" ]
                         ((text <| cdetails.text)
                             :: viewSummonEffects interactive revealed effects
@@ -269,22 +269,18 @@ viewYourCard playing { card, selected, cost, index } =
 
           else
             none
+        , classIf selected "selected"
         ]
         [ div
             [ class
-                (if selected then
-                    "border-yellow-300 border-opacity-75"
-
-                 else
-                    "border-transparent"
-                )
+                "border-transparent"
             ]
             [ img [ Attributes.src details.art ] []
             , Html.span [ class "name" ]
                 ((text <| String.fromInt cost ++ " " ++ details.name)
                     :: (Maybe.map
                             (\sd ->
-                                [ Html.br [] [], text <| String.fromInt sd.influence ]
+                                [ Html.br [] [], text <| "[" ++ String.fromInt sd.influence ++ "]" ]
                             )
                             (getSummonDetails card)
                             |> Maybe.withDefault []
@@ -314,15 +310,11 @@ viewTheirCard gameOver settling { card, selected, cost } =
                 Card.cardDetails card
         in
         div
-            [ class "imageContainer" ]
+            [ class "imageContainer"
+            , classIf selected "selected"
+            ]
             [ div
-                [ class
-                    (if selected then
-                        "border-yellow-300 border-opacity-75"
-
-                     else
-                        "border-transparent"
-                    )
+                [ class "border-transparent"
                 ]
                 [ img [ Attributes.src details.art ] []
                 , Html.span [ class "name" ] [ text <| String.fromInt cost ++ " " ++ details.name ]
@@ -386,7 +378,7 @@ update msg ({ you, they } as model) =
 
         SubmitScheme ->
             ( { model | state = Settling } |> randomAI
-            , Process.sleep 20
+            , Process.sleep 2000
                 |> Task.perform (\_ -> SettleSchemes)
             )
 
@@ -462,14 +454,14 @@ settleSchemes ({ you, they } as model) =
                         Draw f ->
                             { total | draw = total.draw + f from to }
 
-                        GainWisdom f ->
-                            { total | gainWisdom = total.gainWisdom + f from to }
+                        GainIntellect f ->
+                            { total | gainIntellect = total.gainIntellect + f from to }
 
                         GainSanity f ->
                             { total | gainSanity = total.gainSanity + f from to }
 
-                        GainHealth f ->
-                            { total | gainHealth = total.gainHealth + f from to }
+                        GainVitality f ->
+                            { total | gainVitality = total.gainVitality + f from to }
 
                         Summon m ->
                             { total | summon = Just (summonDetails m) }
@@ -480,7 +472,7 @@ settleSchemes ({ you, they } as model) =
                         _ ->
                             total
                 )
-                { summon = Nothing, damage = 0, draw = 0, gainWisdom = 0, gainSanity = 0, gainHealth = 0, preventDraw = 0 }
+                { summon = Nothing, damage = 0, draw = 0, gainIntellect = 0, gainSanity = 0, gainVitality = 0, preventDraw = 0, influenceDamage = 0 }
                 scheme
 
         summonEffect player =
@@ -495,25 +487,26 @@ settleSchemes ({ you, they } as model) =
     { model
         | you =
             { newYou
-                | health = newYou.health - theirEffectTotal.damage + yourEffectTotal.gainHealth
+                | vitality = newYou.vitality - theirEffectTotal.damage + yourEffectTotal.gainVitality
                 , draw = newYou.draw + yourEffectTotal.draw - theirEffectTotal.preventDraw
-                , wisdom = newYou.wisdom + yourEffectTotal.gainWisdom
+                , intellect = newYou.intellect + yourEffectTotal.gainIntellect
                 , sanity = newYou.sanity + yourEffectTotal.gainSanity
                 , summon = yourEffectTotal.summon |> orElse newYou.summon
-                , lich = newYou.lich || newYou.health <= 0
+                , lich = newYou.lich || newYou.vitality <= 0
             }
                 |> calcPlayerDead
         , they =
             { newThey
-                | health = newThey.health - yourEffectTotal.damage + theirEffectTotal.gainHealth
+                | vitality = newThey.vitality - yourEffectTotal.damage + theirEffectTotal.gainVitality
                 , draw = newThey.draw + theirEffectTotal.draw - yourEffectTotal.preventDraw
-                , wisdom = newThey.wisdom + theirEffectTotal.gainWisdom
+                , intellect = newThey.intellect + theirEffectTotal.gainIntellect
                 , sanity = newThey.sanity + theirEffectTotal.gainSanity
                 , summon = theirEffectTotal.summon |> orElse newThey.summon
-                , lich = newThey.lich || newThey.health <= 0
+                , lich = newThey.lich || newThey.vitality <= 0
             }
                 |> calcPlayerDead
         , state = Playing
+        , turn = model.turn + 1
     }
         |> calcGameOver
 
@@ -531,18 +524,18 @@ calcGameOver model =
 
 
 playCards : Player -> Player
-playCards ({ hand, wisdom, wisdomUsed, sanity, draw, summon, deck } as player) =
+playCards ({ hand, intellect, intellectUsed, sanity, draw, summon, deck } as player) =
     { player
         | hand = List.filter (\held -> not held.selected) <| hand
         , deck = deck ++ map .card (List.filter (\held -> held.selected) <| hand)
-        , wisdom = wisdom + 1
-        , wisdomUsed = 0
-        , sanity = sanity - wisdomUsed
+        , intellect = intellect + 1
+        , intellectUsed = 0
+        , sanity = sanity - intellectUsed
         , draw = draw + 1
         , summon = summon |> Maybe.andThen playSummon
     }
         |> updateCosts
-        |> drainSanityFromHealth
+        |> drainSanityFromVitality
 
 
 playSummon : SummonDetails -> Maybe SummonDetails
@@ -561,22 +554,22 @@ playSummon summon =
             }
 
 
-drainSanityFromHealth : { a | sanity : number, health : number } -> { a | sanity : number, health : number }
-drainSanityFromHealth player =
+drainSanityFromVitality : { a | sanity : number, vitality : number } -> { a | sanity : number, vitality : number }
+drainSanityFromVitality player =
     if player.sanity >= 0 then
         player
 
     else
         { player
             | sanity = 0
-            , health = player.health + player.sanity
+            , vitality = player.vitality + player.sanity
         }
 
 
 calcPlayerDead : Player -> Player
 calcPlayerDead player =
     { player
-        | dead = player.health <= 0
+        | dead = player.vitality <= 0
     }
 
 
@@ -660,10 +653,6 @@ getScheme hand =
     List.filter (\held -> held.selected) <| hand
 
 
-
--- TODO trigger on new turn
-
-
 updateCosts : Player -> Player
 updateCosts ({ hand } as player) =
     let
@@ -695,17 +684,20 @@ updateCosts ({ hand } as player) =
     in
     { player
         | hand = updatedHand
-        , wisdomUsed = List.sum <| map (\h -> h.cost) <| List.filter .selected updatedHand
+        , intellectUsed = List.sum <| map (\h -> h.cost) <| List.filter .selected updatedHand
     }
 
 
 schemeValid : Player -> Result String ()
 schemeValid player =
-    if player.wisdomUsed > player.wisdom then
-        Err "Not enough wisdom."
+    if player.intellectUsed > player.intellect then
+        Err "Not enough intellect."
 
     else if (length <| filter (\c -> (cardDetails c.card).cardType == Types.M) (getScheme player.hand)) > 1 then
         Err "More then one summon selected."
+
+    else if player.summon |> Maybe.map (\s -> s.influence + (s.effects |> filter .selected |> map .cost |> List.sum) < 0) |> withDefault False then
+        Err "Not enough influence."
 
     else
         Ok ()

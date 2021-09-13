@@ -229,7 +229,7 @@ cardDetails card =
             , cost = 3
             , text = "Deal 2 damage to yourself and 5 damage to your opponent."
             , art = "images/cards/Swords10.jpg"
-            , effect = [ Damage (\_ _ -> 5), GainHealth (\_ _ -> -2) ]
+            , effect = [ Damage (\_ _ -> 5), GainVitality (\_ _ -> -2) ]
             , cardType = S
             }
 
@@ -247,7 +247,7 @@ cardDetails card =
             , cost = 3
             , text = "Deal 5 damage. You lose 1 intellect."
             , art = "images/cards/Swords12.jpg"
-            , effect = [ Damage (\_ _ -> 5), GainWisdom (\_ _ -> -1) ]
+            , effect = [ Damage (\_ _ -> 5), GainIntellect (\_ _ -> -1) ]
             , cardType = S
             }
 
@@ -282,90 +282,90 @@ cardDetails card =
         C1 ->
             { name = "Intuition"
             , cost = 1
-            , text = "Gain 1 wisdom. Draw a card."
+            , text = "Gain 1 intellect. Draw a card."
             , art = "images/cards/Cups01.jpg"
-            , effect = [ GainWisdom (\_ _ -> 1), Draw (\_ _ -> 1) ]
+            , effect = [ GainIntellect (\_ _ -> 1), Draw (\_ _ -> 1) ]
             , cardType = C
             }
 
         C2 ->
             { name = "Connection"
             , cost = 1
-            , text = "Gain 2 wisdom."
+            , text = "Gain 2 intellect."
             , art = "images/cards/Cups02.jpg"
-            , effect = [ GainWisdom (\_ _ -> 2) ]
+            , effect = [ GainIntellect (\_ _ -> 2) ]
             , cardType = C
             }
 
         C3 ->
             { name = "Overflow"
             , cost = 1
-            , text = "Gain 2 wisdom."
+            , text = "Gain 2 intellect."
             , art = "images/cards/Cups03.jpg"
-            , effect = [ GainWisdom (\_ _ -> 2) ]
+            , effect = [ GainIntellect (\_ _ -> 2) ]
             , cardType = C
             }
 
         C4 ->
             { name = "Apathy"
             , cost = 1
-            , text = "Gain 2 wisdom."
+            , text = "Gain 2 intellect."
             , art = "images/cards/Cups04.jpg"
-            , effect = [ GainWisdom (\_ _ -> 2) ]
+            , effect = [ GainIntellect (\_ _ -> 2) ]
             , cardType = C
             }
 
         C5 ->
             { name = "Regret"
             , cost = 2
-            , text = "Gain 2 wisdom."
+            , text = "Gain 2 intellect."
             , art = "images/cards/Cups05.jpg"
-            , effect = [ GainWisdom (\_ _ -> 2) ]
+            , effect = [ GainIntellect (\_ _ -> 2) ]
             , cardType = C
             }
 
         C6 ->
             { name = "Innocence"
             , cost = 2
-            , text = "Gain 2 wisdom for every card in your scheme.<hr><i>Baboom!</i>"
+            , text = "Gain 2 intellect for every card in your scheme.<hr><i>Baboom!</i>"
             , art = "images/cards/Cups06.jpg"
-            , effect = [ GainWisdom (\you _ -> 2 * (List.length <| List.filter .selected you.hand)) ]
+            , effect = [ GainIntellect (\you _ -> 2 * (List.length <| List.filter .selected you.hand)) ]
             , cardType = C
             }
 
         C7 ->
             { name = "Wishful Thinking"
             , cost = 2
-            , text = "Gain 2 wisdom."
+            , text = "Gain 2 intellect."
             , art = "images/cards/Cups07.jpg"
-            , effect = [ GainWisdom (\_ _ -> 2) ]
+            , effect = [ GainIntellect (\_ _ -> 2) ]
             , cardType = C
             }
 
         C8 ->
             { name = "Weariness"
             , cost = 2
-            , text = "Gain 2 wisdom for every card in your opponent's scheme."
+            , text = "Gain 2 intellect for every card in your opponent's scheme."
             , art = "images/cards/Cups08.jpg"
-            , effect = [ GainWisdom (\_ they -> 2 * (List.length <| List.filter .selected they.hand)) ]
+            , effect = [ GainIntellect (\_ they -> 2 * (List.length <| List.filter .selected they.hand)) ]
             , cardType = C
             }
 
         C9 ->
             { name = "Wish Fulfillment"
             , cost = 2
-            , text = "Gain 3 wisdom."
+            , text = "Gain 3 intellect."
             , art = "images/cards/Cups09.jpg"
-            , effect = [ GainWisdom (\_ _ -> 3) ]
+            , effect = [ GainIntellect (\_ _ -> 3) ]
             , cardType = C
             }
 
         C10 ->
             { name = "Alignment"
             , cost = 3
-            , text = "Gain 2 wisdom."
+            , text = "Gain 2 intellect."
             , art = "images/cards/Cups10.jpg"
-            , effect = [ GainWisdom (\_ _ -> 2) ]
+            , effect = [ GainIntellect (\_ _ -> 2) ]
             , cardType = C
             }
 
@@ -390,25 +390,25 @@ cardDetails card =
         C12 ->
             { name = "Charm"
             , cost = 3
-            , text = "Gain 2 wisdom."
+            , text = "Gain 2 intellect."
             , art = "images/cards/Cups12.jpg"
-            , effect = [ GainWisdom (\_ _ -> 2) ]
+            , effect = [ GainIntellect (\_ _ -> 2) ]
             , cardType = C
             }
 
         C13 ->
             { name = "Compassion"
             , cost = 4
-            , text = "Gain 2 wisdom."
+            , text = "Gain 2 intellect."
             , art = "images/cards/Cups13.jpg"
-            , effect = [ GainWisdom (\_ _ -> 2) ]
+            , effect = [ GainIntellect (\_ _ -> 2) ]
             , cardType = C
             }
 
         C14 ->
             { name = "Balance"
             , cost = 4
-            , text = "Other Cup cards cost 3 less to cast.<br>Gain 1 wisdom."
+            , text = "Other Cup cards cost 3 less to cast.<br>Gain 1 intellect."
             , art = "images/cards/Cups14.jpg"
             , effect =
                 [ CostMod
@@ -419,7 +419,7 @@ cardDetails card =
                         else
                             0
                     )
-                , GainWisdom (\_ _ -> 1)
+                , GainIntellect (\_ _ -> 1)
                 ]
             , cardType = C
             }
@@ -429,7 +429,7 @@ cardDetails card =
             , cost = 1
             , text = "Gain 1 life. Draw a card."
             , art = "images/cards/Pents01.jpg"
-            , effect = [ GainHealth (\_ _ -> 1), Draw (\_ _ -> 1) ]
+            , effect = [ GainVitality (\_ _ -> 1), Draw (\_ _ -> 1) ]
             , cardType = P
             }
 
@@ -438,7 +438,7 @@ cardDetails card =
             , cost = 1
             , text = "Gain 2 life."
             , art = "images/cards/Pents02.jpg"
-            , effect = [ GainHealth (\_ _ -> 2) ]
+            , effect = [ GainVitality (\_ _ -> 2) ]
             , cardType = P
             }
 
@@ -447,7 +447,7 @@ cardDetails card =
             , cost = 1
             , text = "Gain 2 life."
             , art = "images/cards/Pents03.jpg"
-            , effect = [ GainHealth (\_ _ -> 2) ]
+            , effect = [ GainVitality (\_ _ -> 2) ]
             , cardType = P
             }
 
@@ -456,7 +456,7 @@ cardDetails card =
             , cost = 1
             , text = "Gain 2 life."
             , art = "images/cards/Pents04.jpg"
-            , effect = [ GainHealth (\_ _ -> 2) ]
+            , effect = [ GainVitality (\_ _ -> 2) ]
             , cardType = P
             }
 
@@ -465,7 +465,7 @@ cardDetails card =
             , cost = 2
             , text = "Gain 2 life."
             , art = "images/cards/Pents05.jpg"
-            , effect = [ GainHealth (\_ _ -> 2) ]
+            , effect = [ GainVitality (\_ _ -> 2) ]
             , cardType = P
             }
 
@@ -474,16 +474,16 @@ cardDetails card =
             , cost = 2
             , text = "Gain 2 life for every card in your scheme.<hr><i>A momentary abatement...</i>"
             , art = "images/cards/Pents06.jpg"
-            , effect = [ GainHealth (\you _ -> 2 * (List.length <| List.filter .selected you.hand)) ]
+            , effect = [ GainVitality (\you _ -> 2 * (List.length <| List.filter .selected you.hand)) ]
             , cardType = P
             }
 
         P7 ->
             { name = "Profit"
             , cost = 2
-            , text = "Gain life equal to your wisdom."
+            , text = "Gain life equal to your intellect."
             , art = "images/cards/Pents07.jpg"
-            , effect = [ GainHealth (\you _ -> you.wisdom) ]
+            , effect = [ GainVitality (\you _ -> you.intellect) ]
             , cardType = P
             }
 
@@ -492,7 +492,7 @@ cardDetails card =
             , cost = 2
             , text = "Gain 2 life for every card in your opponent's scheme."
             , art = "images/cards/Pents08.jpg"
-            , effect = [ GainHealth (\_ they -> 2 * (List.length <| List.filter .selected they.hand)) ]
+            , effect = [ GainVitality (\_ they -> 2 * (List.length <| List.filter .selected they.hand)) ]
             , cardType = P
             }
 
@@ -501,7 +501,7 @@ cardDetails card =
             , cost = 2
             , text = "Gain 3 life."
             , art = "images/cards/Pents09.jpg"
-            , effect = [ GainHealth (\_ _ -> 3) ]
+            , effect = [ GainVitality (\_ _ -> 3) ]
             , cardType = P
             }
 
@@ -510,7 +510,7 @@ cardDetails card =
             , cost = 3
             , text = "Gain 2 life."
             , art = "images/cards/Pents10.jpg"
-            , effect = [ GainHealth (\_ _ -> 2) ]
+            , effect = [ GainVitality (\_ _ -> 2) ]
             , cardType = P
             }
 
@@ -519,7 +519,7 @@ cardDetails card =
             , cost = 3
             , text = "Gain 2 life."
             , art = "images/cards/Pents11.jpg"
-            , effect = [ GainHealth (\_ _ -> 2) ]
+            , effect = [ GainVitality (\_ _ -> 2) ]
             , cardType = P
             }
 
@@ -528,7 +528,7 @@ cardDetails card =
             , cost = 3
             , text = "Gain 2 life."
             , art = "images/cards/Pents12.jpg"
-            , effect = [ GainHealth (\_ _ -> 2) ]
+            , effect = [ GainVitality (\_ _ -> 2) ]
             , cardType = P
             }
 
@@ -537,14 +537,14 @@ cardDetails card =
             , cost = 4
             , text = "Gain 2 life."
             , art = "images/cards/Pents13.jpg"
-            , effect = [ GainHealth (\_ _ -> 2) ]
+            , effect = [ GainVitality (\_ _ -> 2) ]
             , cardType = P
             }
 
         P14 ->
             { name = "Discipline"
             , cost = 4
-            , text = "Other Sigil cards cost 3 less to cast.<br>Gain 1 wisdom."
+            , text = "Other Sigil cards cost 3 less to cast.<br>Gain 1 intellect."
             , art = "images/cards/Pents14.jpg"
             , effect =
                 [ CostMod
@@ -590,7 +590,7 @@ cardDetails card =
         M3 ->
             { name = "The Empress"
             , cost = 4
-            , text = "Summon ~."
+            , text = ""
             , art = "images/cards/RWS_Tarot_03_Empress.jpg"
             , effect = [ Summon M3 ]
             , cardType = M
@@ -601,14 +601,14 @@ cardDetails card =
             , cost = 6
             , text = "When summoned, you and your opponent lose all sanity."
             , art = "images/cards/RWS_Tarot_04_Emperor.jpg"
-            , effect = [ Summon M4, GainSanity (\you _ -> -you.sanity + you.wisdomUsed) ] --TODO
+            , effect = [ Summon M4, GainSanity (\you _ -> -you.sanity + you.intellectUsed) ] --TODO
             , cardType = M
             }
 
         M5 ->
             { name = "Nyarlathotep"
             , cost = 4
-            , text = "Summon ~."
+            , text = ""
             , art = "images/cards/RWS_Tarot_05_Hierophant.jpg"
             , effect = [ Summon M5 ]
             , cardType = M
@@ -616,8 +616,8 @@ cardDetails card =
 
         M6 ->
             { name = "The Lovers"
-            , cost = 4
-            , text = "Summon ~."
+            , cost = 5
+            , text = ""
             , art = "images/cards/RWS_Tarot_06_Lovers.jpg"
             , effect = [ Summon M6 ]
             , cardType = M
@@ -625,8 +625,8 @@ cardDetails card =
 
         M7 ->
             { name = "The Chariot"
-            , cost = 4
-            , text = "Summon ~."
+            , cost = 1
+            , text = ""
             , art = "images/cards/RWS_Tarot_07_Chariot.jpg"
             , effect = [ Summon M7 ]
             , cardType = M
@@ -634,8 +634,8 @@ cardDetails card =
 
         M8 ->
             { name = "Strength"
-            , cost = 4
-            , text = "Summon ~."
+            , cost = 5
+            , text = ""
             , art = "images/cards/RWS_Tarot_08_Strength.jpg"
             , effect = [ Summon M8 ]
             , cardType = M
@@ -643,8 +643,8 @@ cardDetails card =
 
         M9 ->
             { name = "The Hermit"
-            , cost = 4
-            , text = "Summon ~."
+            , cost = 6
+            , text = ""
             , art = "images/cards/RWS_Tarot_09_Hermit.jpg"
             , effect = [ Summon M9 ]
             , cardType = M
@@ -652,8 +652,8 @@ cardDetails card =
 
         M10 ->
             { name = "Wheel of Fortune"
-            , cost = 4
-            , text = "Summon ~."
+            , cost = 6
+            , text = ""
             , art = "images/cards/RWS_Tarot_10_Wheel_of_Fortune.jpg"
             , effect = [ Summon M10 ]
             , cardType = M
@@ -661,8 +661,8 @@ cardDetails card =
 
         M11 ->
             { name = "Justice"
-            , cost = 4
-            , text = "Summon ~."
+            , cost = 1
+            , text = ""
             , art = "images/cards/RWS_Tarot_11_Justice.jpg"
             , effect = [ Summon M11 ]
             , cardType = M
@@ -671,7 +671,7 @@ cardDetails card =
         M12 ->
             { name = "The Hanged Man"
             , cost = 4
-            , text = "Summon ~."
+            , text = ""
             , art = "images/cards/RWS_Tarot_12_Hanged_Man.jpg"
             , effect = [ Summon M12 ]
             , cardType = M
@@ -680,7 +680,7 @@ cardDetails card =
         M13 ->
             { name = "Death"
             , cost = 4
-            , text = "Summon ~."
+            , text = ""
             , art = "images/cards/RWS_Tarot_13_Death.jpg"
             , effect = [ Summon M13 ]
             , cardType = M
@@ -689,7 +689,7 @@ cardDetails card =
         M14 ->
             { name = "Temperance"
             , cost = 4
-            , text = "Summon ~."
+            , text = ""
             , art = "images/cards/RWS_Tarot_14_Temperance.jpg"
             , effect = [ Summon M14 ]
             , cardType = M
@@ -698,7 +698,7 @@ cardDetails card =
         M15 ->
             { name = "The Devil"
             , cost = 4
-            , text = "Summon ~."
+            , text = ""
             , art = "images/cards/RWS_Tarot_15_Devil.jpg"
             , effect = [ Summon M15 ]
             , cardType = M
@@ -707,7 +707,7 @@ cardDetails card =
         M16 ->
             { name = "The Tower"
             , cost = 4
-            , text = "Summon ~."
+            , text = ""
             , art = "images/cards/RWS_Tarot_16_Tower.jpg"
             , effect = [ Summon M16 ]
             , cardType = M
@@ -716,7 +716,7 @@ cardDetails card =
         M17 ->
             { name = "The Star"
             , cost = 4
-            , text = "Summon ~."
+            , text = ""
             , art = "images/cards/RWS_Tarot_17_Star.jpg"
             , effect = [ Summon M17 ]
             , cardType = M
@@ -725,7 +725,7 @@ cardDetails card =
         M18 ->
             { name = "Gibbous Moon"
             , cost = 4
-            , text = "Summon ~."
+            , text = ""
             , art = "images/cards/RWS_Tarot_18_Moon.jpg"
             , effect = [ Summon M18 ]
             , cardType = M
@@ -734,7 +734,7 @@ cardDetails card =
         M19 ->
             { name = "The Sun"
             , cost = 4
-            , text = "Summon ~."
+            , text = ""
             , art = "images/cards/RWS_Tarot_19_Sun.jpg"
             , effect = [ Summon M19 ]
             , cardType = M
@@ -743,7 +743,7 @@ cardDetails card =
         M20 ->
             { name = "Judgement"
             , cost = 4
-            , text = "Summon ~."
+            , text = ""
             , art = "images/cards/RWS_Tarot_20_Judgement.jpg"
             , effect = [ Summon M20 ]
             , cardType = M
@@ -752,7 +752,7 @@ cardDetails card =
         M21 ->
             { name = "The World"
             , cost = 4
-            , text = "Summon ~."
+            , text = ""
             , art = "images/cards/RWS_Tarot_21_World.jpg"
             , effect = [ Summon M21 ]
             , cardType = M
@@ -761,8 +761,11 @@ cardDetails card =
 
 allCards : List Card
 allCards =
-    [ W1, W2, W3, W4, W5, W6, W7, W8, W9, W10, W11, W12, W13, W14, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, M0, M1, M2, M3, M4  , M5, M6, M7, M8, M9, M10, M11, M12, M13, M14, M15, M16, M17, M18, M19, M20, M21]
+    [ W1, W2, W3, W4, W5, W6, W7, W8, W9, W10, W11, W12, W13, W14, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, M0, M1, M2, M3, M4, M5, M6, M7, M8, M9, M10, M11 ]
 
+
+
+-- , M12, M13, M14, M15, M16, M17, M18, M19, M20, M21
 
 
 random : Random.Generator Card

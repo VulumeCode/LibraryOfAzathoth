@@ -101,6 +101,11 @@ button:focus {
   border-radius: 1em;
 }
 
+.imageContainer.selected img {
+  box-shadow: 0px 0px 7px 10px rgb(112, 181, 255);
+}
+
+
 .hand .imageContainer img {
   border-radius: 0.5em;
 }
@@ -189,6 +194,10 @@ button:focus {
   margin-left: 4rem;
   text-align: right;
 }
+
+
+
+
 .summonEffect.selected {
   color: rgb(49, 130, 206);
 }

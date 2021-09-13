@@ -1,11 +1,12 @@
 module Summon exposing (..)
 
-import Card
+import Card exposing (cardDetails)
 import Debug
 import Html exposing (Html, button, div, img, text)
 import Html.Attributes as Attributes
 import Html.Events as Events
 import Json.Decode as Decode exposing (Value)
+import Maybe exposing (withDefault)
 import Types exposing (..)
 
 
@@ -44,7 +45,7 @@ summonDetails card =
               card = card
             , influence = 1
             , effects =
-                [ SummonEffect 0 [ GainWisdom (\_ _ -> 1) ] (text "Gain one wisdom.") True
+                [ SummonEffect 0 [ GainIntellect (\_ _ -> 1) ] (text "Gain one intellect.") True
                 ]
             }
 
@@ -53,7 +54,7 @@ summonDetails card =
               card = card
             , influence = 1
             , effects =
-                [ SummonEffect 0 [ GainHealth (\_ _ -> 1) ] (text "Gain one health.") True
+                [ SummonEffect 0 [ GainVitality (\_ _ -> 1) ] (text "Gain one vitality.") True
                 ]
             }
 
@@ -63,71 +64,96 @@ summonDetails card =
             , influence = 4
             , effects =
                 [ SummonEffect 2 [ GainSanity (\_ _ -> -1) ] (text "Lose one sanity.") True
-                , SummonEffect -6 [PreventDraw(\_ _ -> 10) ] (text "Banish all summons. Opponent discards all summon cards.") False --TODO
+                , SummonEffect -6 [ PreventDraw (\_ _ -> 10) ] (text "Banish all summons. Opponent discards all summon cards.") False --TODO
                 ]
             }
 
+        M5 ->
+            { -- "Nyarlathotep"
+              card = card
+            , influence = 4
+            , effects =
+                [ SummonEffect 1 [ Damage (\_ _ -> 1) ] (text "Deal one damage.") True
+                , SummonEffect -6 [ PreventDraw (\_ _ -> 10) ] (text "Banish Nyarlathotep, then take control of your opponent's summon.") False --TODO
+                ]
+            }
 
+        M6 ->
+            { -- "The Lovers"
+              card = card
+            , influence = 4
+            , effects =
+                [ SummonEffect -1 [  ] (text "Opponent loses 1 influence.") True --TODO InfluenceDamage (\_ _ -> 1)
+                ]
+            }
+
+        M7 ->
+            { -- "The Chariot"
+              card = card
+            , influence = 1
+            , effects =
+                [ SummonEffect 1 [] (Html.i [] [ text "Charge" ]) True
+                , SummonEffect 0 [ Damage (\you _ -> you.summon |> Maybe.map .influence |> withDefault 0) ] (text "Deal damage equal to your influence.") False
+                , SummonEffect -3
+                    [ CostMod
+                        (\_ _ other ->
+                            if (other.card |> cardDetails |> .cardType) == M then
+                                -3
+
+                            else
+                                0
+                        )
+                    ]
+                    (text "Summon cards cost 3 less to cast.")
+                    False
+                ]
+            }
+
+        M8 ->
+            { -- "Strength"
+              card = card
+            , influence = 8
+            , effects =
+                [ SummonEffect 0 [] (Html.i [] [ text "Stand your ground" ]) True
+                , SummonEffect -2 [ Damage (\you _ -> you.summon |> Maybe.map .influence |> withDefault 0) ] (text "Deal damage equal to your influence.") False
+                ]
+            }
+
+        M9 ->
+            { -- "The Hermit"
+              card = card
+            , influence = 4
+            , effects =
+                [ SummonEffect 1 [ GainIntellect (\_ _ -> 1) ] (text "Gain 1 intellect") True
+                , SummonEffect -5 [ Draw (\_ _ -> 5) ] (text "Discard your hand, then draw 5 cards.") False -- TODO  Discard (\_ _ _ -> True),
+                ]
+            }
+
+        M10 ->
+            { -- "Wheel of Fortune"
+              card = card
+            , influence = 2
+            , effects =
+                [ SummonEffect 1 [ Draw (\_ _ -> 1) ] (text "Draw a card") True
+                , SummonEffect -5 [ GainVitality (\_ _ -> 10) ] (text "Gain 10 vitality.") False -- TODO
+                ]
+            }
+
+        M11 ->
+            { -- "Justice"
+              card = card
+            , influence = 2
+            , effects =
+                [ SummonEffect 0 [ Damage (\_ they -> they.intellectUsed) ] (text "Deal damage equal to your opponent's spent intellect.") True
+                , SummonEffect -2 [ Damage (\you _ -> you.intellectUsed) ] (text "Deal damage equal to your spent intellect.") False -- TODO
+                ]
+            }
 
         _ ->
             summonDetails M0
 
--- M5 ->
---     { name = "Nyarlathotep"
---     , cost = 4
---     , text = "Summon ~."
---     , art = "images/cards/RWS_Tarot_05_Hierophant.jpg"
---     , effect = [ Summon M5 ]
---     , cardType = M
---     }
--- M6 ->
---     { name = "The Lovers"
---     , cost = 4
---     , text = "Summon ~."
---     , art = "images/cards/RWS_Tarot_06_Lovers.jpg"
---     , effect = [ Summon M6 ]
---     , cardType = M
---     }
--- M7 ->
---     { name = "The Chariot"
---     , cost = 4
---     , text = "Summon ~."
---     , art = "images/cards/RWS_Tarot_07_Chariot.jpg"
---     , effect = [ Summon M7 ]
---     , cardType = M
---     }
--- M8 ->
---     { name = "Strength"
---     , cost = 4
---     , text = "Summon ~."
---     , art = "images/cards/RWS_Tarot_08_Strength.jpg"
---     , effect = [ Summon M8 ]
---     , cardType = M
---     }
--- M9 ->
---     { name = "The Hermit"
---     , cost = 4
---     , text = "Summon ~."
---     , art = "images/cards/RWS_Tarot_09_Hermit.jpg"
---     , effect = [ Summon M9 ]
---     , cardType = M
---     }
--- M10 ->
---     { name = "Wheel of Fortune"
---     , cost = 4
---     , text = "Summon ~."
---     , art = "images/cards/RWS_Tarot_10_Wheel_of_Fortune.jpg"
---     , effect = [ Summon M10 ]
---     , cardType = M
---     }
--- M11 ->
---     { name = "Justice"
---     , cost = 4
---     , text = "Summon ~."
---     , art = "images/cards/RWS_Tarot_11_Justice.jpg"
---     , effect = [ Summon M11 ]
---     , cardType = M
---     }
+
+
 -- M12 ->
 --     { name = "The Hanged Man"
 --     , cost = 4
