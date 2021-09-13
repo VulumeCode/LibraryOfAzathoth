@@ -17,7 +17,7 @@ import List.Extra exposing (..)
 import Maybe exposing (withDefault)
 import Maybe.Extra as Maybe exposing (orElse)
 import Process
-import Random
+import Random exposing (Seed)
 import Random.List as Random
 import Result.Extra exposing (isOk)
 import Set
@@ -75,7 +75,6 @@ initGame =
       , turn = 1
       , state = Playing
       }
-      -- , Random.generate Spawn Tetrimino.random
     , Cmd.batch
         [ Random.generate DealYouHand (Random.choices handSize Card.allCards)
         , Random.generate DealTheyHand (Random.choices handSize Card.allCards)
@@ -193,7 +192,7 @@ viewBoard model =
                 ]
             , div [ class "flex-grow hand " ] <|
                 map
-                    (viewYourCard (model.state == Playing))
+                    (viewCard (model.state == Playing))
                     model.you.hand
             ]
         ]
@@ -256,15 +255,15 @@ viewSummonEffectCost cost =
     Html.span [ class "summonEffectCost" ] [ text <| (ifElse (cost > 0) "+" "" ++ String.fromInt cost) ]
 
 
-viewYourCard : Bool -> Held -> Html Msg
-viewYourCard playing { card, selected, cost, index } =
+viewCard : Bool -> Held -> Html Msg
+viewCard interactive { card, selected, cost, index } =
     let
         details =
             Card.cardDetails card
     in
     div
         [ class "imageContainer"
-        , if playing then
+        , if interactive then
             on "pointerup" (Decode.succeed <| SelectCard index)
 
           else
@@ -296,40 +295,20 @@ viewYourCard playing { card, selected, cost, index } =
                             |> Maybe.withDefault []
                        )
                 )
-
-            -- , Html.span [ class "cost" ] [ text <| String.fromInt details.cost ]
             ]
         ]
 
 
-viewTheirCard : Bool -> Bool -> { a | card : Card, selected : Bool, cost : Int } -> Html Msg
-viewTheirCard gameOver settling { card, selected, cost } =
+viewTheirCard : Bool -> Bool -> Held -> Html Msg
+viewTheirCard gameOver settling ({selected} as held) =
     if (selected && settling) || gameOver then
-        let
-            details =
-                Card.cardDetails card
-        in
-        div
-            [ class "imageContainer"
-            , classIf selected "selected"
-            ]
-            [ div
-                [ class "border-transparent"
-                ]
-                [ img [ Attributes.src details.art ] []
-                , Html.span [ class "name" ] [ text <| String.fromInt cost ++ " " ++ details.name ]
-                , Html.span [ class "text" ] [ text details.text ]
-
-                -- , Html.span [ class "cost" ] [ text <| String.fromInt cost ]
-                ]
-            ]
+        viewCard False held
 
     else
         div [ class "imageContainer" ]
             [ div [ class "border-transparent" ]
                 [ img [ Attributes.src cardBack ] []
 
-                -- , Html.span [] [ Html.text "blabla" ]
                 ]
             ]
 
@@ -343,7 +322,7 @@ type Msg
     | SelectCard Int
     | SelectEffect Int
     | SubmitScheme
-    | RandomAI Random.Seed
+    | RandomAI Seed
     | SettleSchemes
     | DealYouHand ( List Card, List Card )
     | DealTheyHand ( List Card, List Card )
@@ -435,7 +414,7 @@ possibleSummonEffects summon =
                     (\chosen -> Just { aSummon | effects = effects |> map (\effect -> { effect | selected = effect == chosen }) })
 
 
-randomAI : Random.Seed -> Model -> Model
+randomAI : Seed -> Model -> Model
 randomAI seed ({ they } as model) =
     let
         options = List.filter (schemeValid >> isOk) <|
