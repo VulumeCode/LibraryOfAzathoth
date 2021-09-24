@@ -1,5 +1,7 @@
 module Card exposing (..)
 
+import List exposing (filter, length)
+import Maybe exposing (withDefault)
 import Random
 import Types exposing (..)
 
@@ -19,36 +21,36 @@ cardDetails card =
         W2 ->
             { name = "Dominion"
             , cost = 1
-            , text = "Gain 1 sanity."
+            , text = "Gain 2 sanity."
             , art = "images/cards/Wands02.jpg"
-            , effect = [ GainSanity (\_ _ -> 1) ]
+            , effect = [ GainSanity (\_ _ -> 2) ]
             , cardType = W
             }
 
         W3 ->
             { name = "Foresight"
             , cost = 1
-            , text = "Gain 1 sanity."
+            , text = "Gain 1 sanity for ever intellect your oppenent spent."
             , art = "images/cards/Wands03.jpg"
-            , effect = [ GainSanity (\_ _ -> 1) ]
+            , effect = [ GainSanity (\_ they -> they.intellectUsed) ]
             , cardType = W
             }
 
         W4 ->
             { name = "Perfection"
             , cost = 1
-            , text = "Gain 1 sanity."
+            , text = "Gain 1 sanity for ever intellect you spent."
             , art = "images/cards/Wands04.jpg"
-            , effect = [ GainSanity (\_ _ -> 1) ]
+            , effect = [ GainSanity (\you _ -> you.intellectUsed) ]
             , cardType = W
             }
 
         W5 ->
             { name = "Conflict"
             , cost = 2
-            , text = "Gain 1 sanity."
+            , text = "Gain 3 sanity, deal 1 damage."
             , art = "images/cards/Wands05.jpg"
-            , effect = [ GainSanity (\_ _ -> 1) ]
+            , effect = [ GainSanity (\_ _ -> 3), Damage (\_ _ -> 1) ]
             , cardType = W
             }
 
@@ -57,16 +59,16 @@ cardDetails card =
             , cost = 2
             , text = "Gain 2 sanity for every card in your scheme."
             , art = "images/cards/Wands06.jpg"
-            , effect = [ GainSanity (\you _ -> 2 * (List.length <| List.filter .selected you.hand)) ]
+            , effect = [ GainSanity (\you _ -> 2 * (length <| filter .selected you.hand)) ]
             , cardType = W
             }
 
         W7 ->
             { name = "Conviction"
             , cost = 2
-            , text = "Gain 1 sanity."
+            , text = "Gain 4 sanity, lose 1 vitality."
             , art = "images/cards/Wands07.jpg"
-            , effect = [ GainSanity (\_ _ -> 1) ]
+            , effect = [ GainSanity (\_ _ -> 4), GainVitality (\_ _ -> -1) ]
             , cardType = W
             }
 
@@ -75,52 +77,52 @@ cardDetails card =
             , cost = 2
             , text = "Gain 2 sanity for every card in your opponent's scheme."
             , art = "images/cards/Wands08.jpg"
-            , effect = [ GainSanity (\_ they -> 2 * (List.length <| List.filter .selected they.hand)) ]
+            , effect = [ GainSanity (\_ they -> 2 * (length <| filter .selected they.hand)) ]
             , cardType = W
             }
 
         W9 ->
             { name = "Stamina"
             , cost = 2
-            , text = "Gain 1 sanity."
+            , text = "Gain 5 sanity, lose 1 intellect."
             , art = "images/cards/Wands09.jpg"
-            , effect = [ GainSanity (\_ _ -> 1) ]
+            , effect = [ GainSanity (\_ _ -> 1), GainIntellect (\_ _ -> -1) ]
             , cardType = W
             }
 
         W10 ->
             { name = "Oppression"
             , cost = 3
-            , text = "Gain 1 sanity."
+            , text = "Gain 3 sanity, opponent draws one fewer card."
             , art = "images/cards/Wands10.jpg"
-            , effect = [ GainSanity (\_ _ -> 1) ]
+            , effect = [ GainSanity (\_ _ -> 3), PreventDraw (\_ _ -> 1) ]
             , cardType = W
             }
 
         W11 ->
             { name = "Discovery"
             , cost = 3
-            , text = "Gain 1 sanity."
+            , text = "Gain 3 sanity, draw 2 cards."
             , art = "images/cards/Wands11.jpg"
-            , effect = [ GainSanity (\_ _ -> 1) ]
+            , effect = [ GainSanity (\_ _ -> 3), Draw (\_ _ -> 2) ]
             , cardType = W
             }
 
         W12 ->
             { name = "Energy"
             , cost = 3
-            , text = "Gain 1 sanity"
+            , text = "Gain 4 sanity"
             , art = "images/cards/Wands12.jpg"
-            , effect = [ GainSanity (\_ _ -> 1) ]
+            , effect = [ GainSanity (\_ _ -> 4) ]
             , cardType = W
             }
 
         W13 ->
             { name = "Vibrance"
             , cost = 4
-            , text = "Gain 1 sanity."
+            , text = "Gain sanity equal to your influence."
             , art = "images/cards/Wands13.jpg"
-            , effect = [ GainSanity (\_ _ -> 1) ]
+            , effect = [ GainSanity (\you _ -> you.summon |> Maybe.map .influence |> withDefault 0) ]
             , cardType = W
             }
 
@@ -164,27 +166,27 @@ cardDetails card =
         S3 ->
             { name = "Betrayal"
             , cost = 1
-            , text = "Deal 2 damage."
+            , text = "Deal 1 damage for every card in your opponent's scheme."
             , art = "images/cards/Swords03.jpg"
-            , effect = [ Damage (\_ _ -> 2) ]
+            , effect = [ Damage (\_ they -> length <| filter .selected they.hand) ]
             , cardType = S
             }
 
         S4 ->
             { name = "Truce"
             , cost = 1
-            , text = "Deal 2 damage."
+            , text = "Deal 3 damage, lose 2 vitality."
             , art = "images/cards/Swords04.jpg"
-            , effect = [ Damage (\_ _ -> 2) ]
+            , effect = [ Damage (\_ _ -> 2), GainVitality (\_ _ -> -2) ]
             , cardType = S
             }
 
         S5 ->
             { name = "Defeat"
             , cost = 2
-            , text = "Deal 2 damage."
+            , text = "Deal 3 damage."
             , art = "images/cards/Swords05.jpg"
-            , effect = [ Damage (\_ _ -> 2) ]
+            , effect = [ Damage (\_ _ -> 3) ]
             , cardType = S
             }
 
@@ -193,16 +195,16 @@ cardDetails card =
             , cost = 2
             , text = "Deal 2 damage for every card in your scheme.<hr><i>Baboom!</i>"
             , art = "images/cards/Swords06.jpg"
-            , effect = [ Damage (\you _ -> 2 * (List.length <| List.filter .selected you.hand)) ]
+            , effect = [ Damage (\you _ -> 2 * (length <| filter .selected you.hand)) ]
             , cardType = S
             }
 
         S7 ->
             { name = "Uselessness"
             , cost = 2
-            , text = "Deal 2 damage."
+            , text = "Deal 4 damage, draw one card fewer."
             , art = "images/cards/Swords07.jpg"
-            , effect = [ Damage (\_ _ -> 2) ]
+            , effect = [ Damage (\_ _ -> 2), Draw (\_ _ -> -1) ]
             , cardType = S
             }
 
@@ -211,7 +213,7 @@ cardDetails card =
             , cost = 2
             , text = "Deal 2 damage for every card in your opponent's scheme."
             , art = "images/cards/Swords08.jpg"
-            , effect = [ Damage (\_ they -> 2 * (List.length <| List.filter .selected they.hand)) ]
+            , effect = [ Damage (\_ they -> 2 * (length <| filter .selected they.hand)) ]
             , cardType = S
             }
 
@@ -256,7 +258,7 @@ cardDetails card =
             , cost = 4
             , text = "Deal damage equal to your influence."
             , art = "images/cards/Swords13.jpg"
-            , effect = [ Damage (\you _ -> you.summon |> Maybe.map .influence |> Maybe.withDefault 0) ]
+            , effect = [ Damage (\you _ -> you.summon |> Maybe.map .influence |> withDefault 0) ]
             , cardType = S
             }
 
@@ -329,7 +331,7 @@ cardDetails card =
             , cost = 2
             , text = "Gain 2 intellect for every card in your scheme.<hr><i>Baboom!</i>"
             , art = "images/cards/Cups06.jpg"
-            , effect = [ GainIntellect (\you _ -> 2 * (List.length <| List.filter .selected you.hand)) ]
+            , effect = [ GainIntellect (\you _ -> 2 * (length <| filter .selected you.hand)) ]
             , cardType = C
             }
 
@@ -347,7 +349,7 @@ cardDetails card =
             , cost = 2
             , text = "Gain 2 intellect for every card in your opponent's scheme."
             , art = "images/cards/Cups08.jpg"
-            , effect = [ GainIntellect (\_ they -> 2 * (List.length <| List.filter .selected they.hand)) ]
+            , effect = [ GainIntellect (\_ they -> 2 * (length <| filter .selected they.hand)) ]
             , cardType = C
             }
 
@@ -363,9 +365,9 @@ cardDetails card =
         C10 ->
             { name = "Alignment"
             , cost = 3
-            , text = "Gain 2 intellect."
+            , text = "Gain 4 intellect."
             , art = "images/cards/Cups10.jpg"
-            , effect = [ GainIntellect (\_ _ -> 2) ]
+            , effect = [ GainIntellect (\_ _ -> 4) ]
             , cardType = C
             }
 
@@ -390,18 +392,18 @@ cardDetails card =
         C12 ->
             { name = "Charm"
             , cost = 3
-            , text = "Gain 2 intellect."
+            , text = "Gain 4 intellect."
             , art = "images/cards/Cups12.jpg"
-            , effect = [ GainIntellect (\_ _ -> 2) ]
+            , effect = [ GainIntellect (\_ _ -> 4) ]
             , cardType = C
             }
 
         C13 ->
             { name = "Compassion"
             , cost = 4
-            , text = "Gain 2 intellect."
+            , text = "Gain 5 intellect."
             , art = "images/cards/Cups13.jpg"
-            , effect = [ GainIntellect (\_ _ -> 2) ]
+            , effect = [ GainIntellect (\_ _ -> 5) ]
             , cardType = C
             }
 
@@ -463,9 +465,9 @@ cardDetails card =
         P5 ->
             { name = "Poverty"
             , cost = 2
-            , text = "Gain 2 life."
+            , text = "Gain 3 life."
             , art = "images/cards/Pents05.jpg"
-            , effect = [ GainVitality (\_ _ -> 2) ]
+            , effect = [ GainVitality (\_ _ -> 3) ]
             , cardType = P
             }
 
@@ -474,7 +476,7 @@ cardDetails card =
             , cost = 2
             , text = "Gain 2 life for every card in your scheme.<hr><i>A momentary abatement...</i>"
             , art = "images/cards/Pents06.jpg"
-            , effect = [ GainVitality (\you _ -> 2 * (List.length <| List.filter .selected you.hand)) ]
+            , effect = [ GainVitality (\you _ -> 2 * (length <| filter .selected you.hand)) ]
             , cardType = P
             }
 
@@ -492,7 +494,7 @@ cardDetails card =
             , cost = 2
             , text = "Gain 2 life for every card in your opponent's scheme."
             , art = "images/cards/Pents08.jpg"
-            , effect = [ GainVitality (\_ they -> 2 * (List.length <| List.filter .selected they.hand)) ]
+            , effect = [ GainVitality (\_ they -> 2 * (length <| filter .selected they.hand)) ]
             , cardType = P
             }
 
@@ -508,36 +510,36 @@ cardDetails card =
         P10 ->
             { name = "Wealth"
             , cost = 3
-            , text = "Gain 2 life."
+            , text = "Gain 4 life."
             , art = "images/cards/Pents10.jpg"
-            , effect = [ GainVitality (\_ _ -> 2) ]
+            , effect = [ GainVitality (\_ _ -> 4) ]
             , cardType = P
             }
 
         P11 ->
             { name = "Enterprise"
             , cost = 3
-            , text = "Gain 2 life."
+            , text = "Gain 4 life."
             , art = "images/cards/Pents11.jpg"
-            , effect = [ GainVitality (\_ _ -> 2) ]
+            , effect = [ GainVitality (\_ _ -> 4) ]
             , cardType = P
             }
 
         P12 ->
             { name = "Habit"
             , cost = 3
-            , text = "Gain 2 life."
+            , text = "Gain 4 life."
             , art = "images/cards/Pents12.jpg"
-            , effect = [ GainVitality (\_ _ -> 2) ]
+            , effect = [ GainVitality (\_ _ -> 4) ]
             , cardType = P
             }
 
         P13 ->
             { name = "Abundance"
             , cost = 4
-            , text = "Gain 2 life."
+            , text = "Gain 5 life."
             , art = "images/cards/Pents13.jpg"
-            , effect = [ GainVitality (\_ _ -> 2) ]
+            , effect = [ GainVitality (\_ _ -> 5) ]
             , cardType = P
             }
 

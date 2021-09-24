@@ -12,9 +12,10 @@ import Html.Extra as Html exposing (nothing, static)
 import Html.Parser as Parser
 import Html.Parser.Util as Parser
 import Json.Decode as Decode exposing (Value)
-import List exposing (concat, concatMap, filter, foldl, indexedMap, length, map)
-import List.Extra exposing (..)
-import Maybe exposing (withDefault)
+import List exposing (append, concat, concatMap, filter, foldl, indexedMap, length, map, sortBy, sum)
+import List.Extra exposing (lift2, maximumBy)
+import MCTS
+import Maybe exposing (andThen, withDefault)
 import Maybe.Extra as Maybe exposing (orElse)
 import Process
 import Random exposing (Seed)
@@ -282,17 +283,17 @@ viewCard interactive { card, selected, cost, index } =
                                 [ Html.br [] [], text <| "[" ++ String.fromInt sd.influence ++ "]" ]
                             )
                             (getSummonDetails card)
-                            |> Maybe.withDefault []
+                            |> withDefault []
                        )
                 )
             , Html.span [ class "text" ]
-                (Parser.toVirtualDom (Result.withDefault [ Parser.Comment "String" ] (Parser.run details.text))
+                (Parser.toVirtualDom (Parser.run details.text |> Result.withDefault [ Parser.Comment "String" ])
                     ++ (Maybe.map
                             (\sd ->
                                 viewSummonEffects False False sd.effects
                             )
                             (getSummonDetails card)
-                            |> Maybe.withDefault []
+                            |> withDefault []
                        )
                 )
             ]
@@ -300,15 +301,14 @@ viewCard interactive { card, selected, cost, index } =
 
 
 viewTheirCard : Bool -> Bool -> Held -> Html Msg
-viewTheirCard gameOver settling ({selected} as held) =
-    if (selected && settling) || gameOver then
+viewTheirCard gameOver settling ({ selected } as held) =
+    if True || (selected && settling) || gameOver then
         viewCard False held
 
     else
         div [ class "imageContainer" ]
             [ div [ class "border-transparent" ]
                 [ img [ Attributes.src cardBack ] []
-
                 ]
             ]
 
@@ -337,57 +337,50 @@ update msg ({ you, they } as model) =
             initGame
 
         SelectCard card ->
-            ( { model | you = selectCard you card }
-            , Cmd.none
-            )
+            with { model | you = selectCard you card }
 
         SelectEffect i ->
-            ( { model | you = selectEffect you i }
-            , Cmd.none
-            )
+            with { model | you = selectEffect you i }
 
         DealYouHand dealt ->
-            ( { model | you = dealHand you dealt }
-            , Cmd.none
-            )
+            with { model | you = dealHand you dealt }
 
         DealTheyHand dealt ->
-            ( { model | they = dealHand they dealt }
-            , Cmd.none
-            )
+            with { model | they = dealHand they dealt }
 
         SubmitScheme ->
-            ( model
-            , Random.generate RandomAI Random.independentSeed 
-            )
+            withBatch model
+                [ Random.generate RandomAI Random.independentSeed ]
 
-        RandomAI seed-> 
-            ( { model | state = Settling } |> randomAI seed
-            , Process.sleep 2000
-                |> Task.perform (\_ -> SettleSchemes)
-            )
+        RandomAI seed ->
+            withBatch ({ model | state = Settling } |> mtcsAI seed)
+                [ Process.sleep 2000 |> Task.perform (\_ -> SettleSchemes) ]
 
         SettleSchemes ->
-            let
-                settled =
-                    model |> settleSchemes
-            in
-            ( settled
-            , Cmd.batch
-                [ Random.generate DealYouCards (Random.choices settled.you.draw settled.you.deck)
-                , Random.generate DealTheyCards (Random.choices settled.they.draw settled.they.deck)
-                ]
-            )
+            withBatchBy (model |> settleSchemes)
+                (\settled ->
+                    [ Random.generate DealYouCards (Random.choices settled.you.draw settled.you.deck)
+                    , Random.generate DealTheyCards (Random.choices settled.they.draw settled.they.deck)
+                    ]
+                )
 
         DealYouCards cs ->
-            ( { model | you = dealCards you cs }
-            , Cmd.none
-            )
+            with { model | you = dealCards you cs }
 
         DealTheyCards cs ->
-            ( { model | they = dealCards they cs }
-            , Cmd.none
-            )
+            with { model | they = dealCards they cs }
+
+
+withBatch model commands =
+    ( model, Cmd.batch commands )
+
+
+withBatchBy model f =
+    ( model, Cmd.batch (f model) )
+
+
+with model =
+    ( model, Cmd.none )
 
 
 possibleHands : List { a | selected : Bool } -> List (List { a | selected : Bool })
@@ -414,21 +407,108 @@ possibleSummonEffects summon =
                     (\chosen -> Just { aSummon | effects = effects |> map (\effect -> { effect | selected = effect == chosen }) })
 
 
+optionsAI : Model -> List Player
+optionsAI ({ they } as model) =
+    filter (schemeValid >> isOk) <|
+        lift2 (\h s -> updateCosts { they | hand = h, summon = s })
+            (possibleHands they.hand)
+            (possibleSummonEffects they.summon)
+
+
 randomAI : Seed -> Model -> Model
 randomAI seed ({ they } as model) =
     let
-        options = List.filter (schemeValid >> isOk) <|
-                        lift2 (\h s -> updateCosts { they | hand = h, summon = s })
-                            (possibleHands they.hand)
-                            (possibleSummonEffects they.summon)
+        options =
+            optionsAI model
 
-        ((choice,_),_) = Random.step (Random.choose options) seed
-    in 
+        ( ( choice, _ ), _ ) =
+            Random.step (Random.choose options) seed
+    in
     { model
-        | they =
-            Maybe.withDefault they choice
-                    
+        | they = choice |> withDefault they
     }
+
+
+randomYou : Seed -> Model -> ( Model, Seed )
+randomYou seed0 ({ you } as model) =
+    let
+        options =
+            filter (schemeValid >> isOk) <|
+                lift2 (\h s -> updateCosts { you | hand = h, summon = s })
+                    (possibleHands you.hand)
+                    (possibleSummonEffects you.summon)
+
+        ( ( choice, _ ), seed1 ) =
+            Random.step (Random.choose options) seed0
+    in
+    ( { model
+        | you = choice |> withDefault you
+      }
+    , seed1
+    )
+
+
+mtcsAI : Seed -> Model -> Model
+mtcsAI seed0 ({ they, you } as model) =
+    let
+        fuddle s0 m =
+            let
+                ( fuddledHand, s1 ) =
+                    Random.step (Random.choices (you.hand |> length) Card.allCards) s0
+            in
+            ( { m | you = dealHand m.you fuddledHand }, s1 )
+
+        root =
+            MCTS.Node
+                { model = model
+                , t = 0
+                , w = 0
+                , children = Nothing
+                }
+
+        expandChildren : Model -> List Model
+        expandChildren m =
+            m |> optionsAI >> map (\p -> { m | they = p })
+
+        playRound : Seed -> Model -> ( Model, Seed )
+        playRound s0 m =
+            let
+                settledModel =
+                    settleSchemes m
+
+                ( theyDrew, s1 ) =
+                    Random.step (Random.choices settledModel.they.draw settledModel.they.deck) s0
+
+                ( youDrew, s2 ) =
+                    Random.step (Random.choices settledModel.you.draw settledModel.you.deck) s1
+            in
+            ( { settledModel
+                | you = dealCards settledModel.you youDrew
+                , they = dealCards settledModel.they theyDrew
+              }
+            , s2
+            )
+
+        (MCTS.Node rootFinal) =
+            MCTS.run root
+                10
+                seed0
+                { expandChildren = expandChildren
+                , playerRandom = randomYou
+                , playRound = playRound
+                , gameResult = \m -> ( m.you.dead, m.they.dead )
+                , fuddle = fuddle
+                }
+
+        chosenMove =
+            case rootFinal.children |> andThen (maximumBy (\(MCTS.Node c) -> c.w / c.t)) of
+                Just (MCTS.Node chosenModel) ->
+                    Debug.log "Move" chosenModel.model.they
+
+                Nothing ->
+                    Debug.log "Nothing" model.they
+    in
+    { model | they = chosenMove }
 
 
 settleSchemes : Model -> Model
@@ -528,13 +608,13 @@ calcGameOver model =
 playCards : Player -> Player
 playCards ({ hand, intellect, intellectUsed, sanity, draw, summon, deck } as player) =
     { player
-        | hand = List.filter (\held -> not held.selected) <| hand
-        , deck = deck ++ map .card (List.filter (\held -> held.selected) <| hand)
+        | hand = filter (\held -> not held.selected) <| hand
+        , deck = deck ++ map .card (filter (\held -> held.selected) <| hand)
         , intellect = intellect + 1
         , intellectUsed = 0
         , sanity = sanity - intellectUsed
         , draw = draw + 1
-        , summon = summon |> Maybe.andThen playSummon
+        , summon = summon |> andThen playSummon
     }
         |> updateCosts
         |> drainSanityFromVitality
@@ -544,7 +624,7 @@ playSummon : SummonDetails -> Maybe SummonDetails
 playSummon summon =
     let
         calcInfluence =
-            summon.influence + (summon.effects |> filter .selected |> map .cost |> List.sum)
+            summon.influence + (summon.effects |> filter .selected |> map .cost |> sum)
     in
     if calcInfluence <= 0 then
         Nothing
@@ -608,21 +688,21 @@ dealCards : Player -> ( List Card, List Card ) -> Player
 dealCards ({ hand } as player) ( dealt, deck ) =
     { player
         | deck = deck
-        , hand = sortHand <| List.append hand (map (\c -> { card = c, selected = False, cost = (cardDetails c).cost, index = -1 }) dealt)
+        , hand = sortHand <| append hand (map (\c -> { card = c, selected = False, cost = (cardDetails c).cost, index = -1 }) dealt)
         , draw = 0
     }
 
 
 sortHand : List Held -> List Held
 sortHand hand =
-    indexedMap (\i c -> { c | index = i }) <| List.sortBy (\h -> cardDetails h.card |> .cost) <| List.sortBy (\h -> cardDetails h.card |> .name) hand
+    indexedMap (\i c -> { c | index = i }) <| sortBy (\h -> cardDetails h.card |> .cost) <| sortBy (\h -> cardDetails h.card |> .name) hand
 
 
 selectCard : Player -> Int -> Player
 selectCard ({ hand } as player) i =
     { player
         | hand =
-            List.map
+            map
                 (\c ->
                     if c.index == i then
                         { c | selected = not c.selected }
@@ -652,7 +732,7 @@ selectEffect ({ summon } as player) selected =
 
 
 getScheme hand =
-    List.filter (\held -> held.selected) <| hand
+    filter (\held -> held.selected) <| hand
 
 
 updateCosts : Player -> Player
@@ -686,7 +766,7 @@ updateCosts ({ hand } as player) =
     in
     { player
         | hand = updatedHand
-        , intellectUsed = List.sum <| map (\h -> h.cost) <| List.filter .selected updatedHand
+        , intellectUsed = sum <| map (\h -> h.cost) <| filter .selected updatedHand
     }
 
 
@@ -698,7 +778,7 @@ schemeValid player =
     else if (length <| filter (\c -> (cardDetails c.card).cardType == Types.M) (getScheme player.hand)) > 1 then
         Err "More then one summon selected."
 
-    else if player.summon |> Maybe.map (\s -> s.influence + (s.effects |> filter .selected |> map .cost |> List.sum) < 0) |> withDefault False then
+    else if player.summon |> Maybe.map (\s -> s.influence + (s.effects |> filter .selected |> map .cost |> sum) < 0) |> withDefault False then
         Err "Not enough influence."
 
     else

@@ -83,7 +83,7 @@ summonDetails card =
               card = card
             , influence = 4
             , effects =
-                [ SummonEffect -1 [  ] (text "Opponent loses 1 influence.") True --TODO InfluenceDamage (\_ _ -> 1)
+                [ SummonEffect -1 [] (text "Opponent loses 1 influence.") True --TODO InfluenceDamage (\_ _ -> 1)
                 ]
             }
 
